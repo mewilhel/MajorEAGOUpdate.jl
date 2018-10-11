@@ -1,0 +1,5 @@
+@define_diffrule McCormickCassette.pow_pos_1_infty(x, y) = :( $y * ($x^($y - 1)) ), :( ($x^$y) * log($x) )
+@define_diffrule McCormickCassette.pow_pos_0_1(x, y) = :( $y * ($x^($y - 1)) ), :( ($x^$y) * log($x) )
+@define_diffrule McCormickCassette.pow_neg_even(x, y) = :( $y * ($x^($y - 1)) ), :( ($x^$y) * log($x) )
+@define_diffrule McCormickCassette.pow_neg_odd(x, y) = :( $y * ($x^($y - 1)) ), :( ($x^$y) * log($x) )
+@define_diffrule McCormickCassette.pow_neg_float(x, y) = :( $y * ($x^($y - 1)) ), :( ($x^$y) * log($x) )

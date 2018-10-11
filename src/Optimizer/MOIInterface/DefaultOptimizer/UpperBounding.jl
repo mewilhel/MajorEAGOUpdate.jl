@@ -1,0 +1,35 @@
+function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
+    if is_integer_feasible(x)
+        # Copies initial model into working model (if initial model isn't dummy)
+        if x.InitialUpperOptimizer != DummyOptimizer()
+            MOI.copy!(x.InitialUpperOptimizer,x.WorkingUpperOptimizer)
+        end
+
+        # Updates variables bounds
+        Update_VariableBounds_Upper!(x,y,x.WorkingUpperOptimizer)
+
+        # Optimizes the object
+        MOI.optimize!(x.WorkingUpperOptimizer)
+
+        # Process output info and save to CurrentUpperInfo object
+        termination_status = MOI.get(x.WorkingUpperOptimizer, MOI.TerminationStatus())
+        objvalue = MOI.get(x.WorkingUpperOptimizer, MOI.ObjectiveValue())
+        if termination_status == MOI.Success
+            @assert MOI.get(x.WorkingUpperOptimizer, MOI.ResultCount()) > 0
+            result_status = MOI.get(x.WorkingUpperOptimizer, MOI.PrimalStatus())
+            if result_status != MOI.FeasiblePoint
+                x.CurrentUpperInfo.Feasibility = false
+                x.CurrentUpperInfo.Value = Inf
+            end
+            x.CurrentUpperInfo.Feasibility = true
+            x.CurrentUpperInfo.Value = objvalue
+            x.CurrentUpperInfo.Solution[1:end] = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
+        else
+            x.CurrentUpperInfo.Feasibility = false
+            x.CurrentUpperInfo.Value = Inf
+        end
+    else
+        x.CurrentUpperInfo.Feasibility = false
+        x.CurrentUpperInfo.Value = Inf
+    end
+end
