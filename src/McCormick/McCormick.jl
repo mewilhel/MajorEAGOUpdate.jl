@@ -1,4 +1,4 @@
-module McCormick
+@reexport module McCormick
 
 using IntervalArithmetic, StaticArrays, CommonSubexpressions, DiffRules, BenchmarkTools
 
@@ -19,6 +19,8 @@ export MC, cc, cv, Intv, lo, hi,  cc_grad, cv_grad, cnst, +, -, *, /, convert,
 export plus!, mult!, min!, max!, minus!, div!, exp!, exp2!, exp10!, expm1!,
        log!, log2!, log10!, log1p!, sin!, cos!, tan!, asin!, acos!, atan!,
        sinh!, cosh!, tanh!, asinh!, acosh!, atanh!, abs!, sqr!, sqrt!, pow!
+
+export seedg, IntervalType
 
 # Export reverse operators
 #=
@@ -48,7 +50,7 @@ include("OperatorLibrary/Type.jl")
 include("Utilities/APIUtilities.jl")
 include("Utilities/RootFinding.jl")
 
-#include("OperatorLibrary/ForwardOperators/Forward.jl")
+include("OperatorLibrary/ForwardOperators/Forward.jl")
 #include("OperatorLibrary/ReverseOperators/Reverse.jl")
 #include("OperatorLibrary/Inplace.jl")
 

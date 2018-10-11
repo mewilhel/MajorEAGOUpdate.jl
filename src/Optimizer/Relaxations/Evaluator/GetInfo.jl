@@ -155,7 +155,7 @@ function MOI.features_available(d::Evaluator)
 end
 
 # looks good, doesn't do anything, EAGO builds the evaluator and attaches it to lower problems
-function MOI.initialize!(d::Evaluator, requested_features::Vector{Symbol}) end
+function MOI.initialize(d::Evaluator, requested_features::Vector{Symbol}) end
 
 # looks good
 MOI.objective_expr(d::Evaluator) = error("EAGO.Evaluator doesn't provide expression graphs of constraint functions.")

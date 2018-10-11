@@ -19,7 +19,7 @@ function MOI.empty!(m::Optimizer)
     m.BisectionFunction = DummyFunction
 end
 
-function MOI.isempty(m::Optimizer)
+function MOI.is_empty(m::Optimizer)
     vb = Bool[false for i=1:15]
     vb[1] = isempty(m.VariableInfo)
     vb[2] = m.StartedSolve

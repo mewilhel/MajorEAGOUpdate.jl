@@ -5,10 +5,11 @@ import MathOptInterface
 using Printf
 using SparseArrays
 
-using StaticArrays
-using DiffRules
-using Ipopt
 using JuMP
+using Ipopt
+using DiffRules
+using Reexport
+using StaticArrays
 using IntervalArithmetic
 
 const MOI = MathOptInterface
@@ -19,5 +20,6 @@ using .McCormick
 
 include("Optimizer/IpoptSupplement.jl")
 include("Optimizer/MathOptInterfaceEAGO.jl")
+include("Optimizer/Relaxations/Evaluator/Evaluator.jl")
 
 end # module

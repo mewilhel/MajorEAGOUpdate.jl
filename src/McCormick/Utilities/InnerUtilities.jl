@@ -3,7 +3,7 @@
 
 Creates a `x::SVector{N,T}` object that is one at `x[j]` and zero everywhere else.
 """
-seed_g(T::Type,j::Int,N::Int) = SVector{N,T}([i == j ? 1.0 : 0.0 for i=1:N])
+seedg(T::Type,j::Int,N::Int) = SVector{N,T}([i == j ? 1.0 : 0.0 for i=1:N])
 
 """
     mid3(x::T,y::T,z::T)

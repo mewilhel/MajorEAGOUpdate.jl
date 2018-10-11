@@ -180,8 +180,8 @@ function max(x::MC{N},y::MC{N}) where N
       cc_grad = ccMC.cc_grad
     end
       cv = max(x.cv,y.cv)
-      cv_grad = (x.cv > y.cv) ? (x.cnst ? zeros(x.cv_grad): x.cv_grad) :
-                                (y.cnst ? zeros(y.cv_grad): y.cv_grad)
+      cv_grad = (x.cv > y.cv) ? (x.cnst ? zeros(x.cv_grad) : x.cv_grad) :
+                                (y.cnst ? zeros(y.cv_grad) : y.cv_grad)
       cv,cc,cv_grad,cc_grad = cut(maxxL,maxxU,cv,cc,cv_grad,cc_grad)
       cnst = y.cnst ? x.cnst : (x.cnst ? y.cnst : (x.cnst || y.cnst) )
       temp = MC{N}(cv, cc, maxIntv, cv_grad, cc_grad, cnst)

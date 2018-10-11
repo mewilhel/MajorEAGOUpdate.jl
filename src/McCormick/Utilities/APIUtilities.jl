@@ -4,7 +4,7 @@
 sets convex and concave (sub)gradients of length `n` of `x` to be `1` at index `j`
 """
 function grad(x::MC{N},j::Int) where N
-  sv_grad::SVector{N,Float64} = seed_g(T,j,N)
+  sv_grad::SVector{N,Float64} = seedg(T,j,N)
   return MC{N}(x.cc,x.cv,sv_grad,sv_grad,x.Intv,x.cnst)
 end
 

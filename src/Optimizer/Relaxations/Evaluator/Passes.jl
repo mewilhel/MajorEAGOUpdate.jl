@@ -2,10 +2,10 @@ function SetValueConstruct end
 function SetValuePost end
 
 function set_forward_eval(storage::Vector{T},
-                          nd::AbstractVector{NodeData}, adj, const_values,
+                          nd::AbstractVector{JuMP.NodeData}, adj, const_values,
                           parameter_values, current_node::NodeBB, x_values::Vector{T},
                           subexpression_values, user_input_buffer = [];
-                          user_operators::UserOperatorRegistry=UserOperatorRegistry()) where T
+                          user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
 
     @assert length(storage) >= length(nd)
 
@@ -147,9 +147,9 @@ function set_forward_eval(storage::Vector{T},
     return storage[1]
 end
 
-function forward_eval_all(d::NLPEvaluator,x)
+function forward_eval_all(d::Evaluator,x)
     subexpr_values = d.subexpression_forward_values
-    user_operators = d.m.nlp_data.user_operators::Derivatives.UserOperatorRegistry
+    user_operators = d.m.nlp_data.user_operators::JuMP.Derivatives.UserOperatorRegistry
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
@@ -177,7 +177,7 @@ function forward_eval_all(d::NLPEvaluator,x)
 end
 
 function reverse_eval(reverse_storage::Vector{T},
-                      nd::Vector{NodeData}, adj) where T
+                      nd::Vector{JuMP.NodeData}, adj) where T
 
     @assert length(reverse_storage) >= length(nd)
     @assert length(partials_storage) >= length(nd)
@@ -196,7 +196,7 @@ function reverse_eval(reverse_storage::Vector{T},
     nothing
 end
 
-function reverse_eval_all(d::NLPEvaluator,x)
+function reverse_eval_all(d::Evaluator,x)
     # do a reverse pass on all expressions at x
     subexpr_reverse_values = d.subexpression_reverse_values
     subexpr_values = d.subexpression_forward_values
@@ -216,7 +216,7 @@ function reverse_eval_all(d::NLPEvaluator,x)
 end
 
 # looks good
-function forward_reverse_pass(d::NLPEvaluator,x)
+function forward_reverse_pass(d::Evaluator,x)
     if d.last_x != x
         if d.has_reverse
             for i in d.fw_repeats
