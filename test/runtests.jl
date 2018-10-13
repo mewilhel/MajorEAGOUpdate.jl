@@ -1,6 +1,7 @@
 using MathOptInterface
 using MajorEAGOUpdate
 using StaticArrays
+using IntervalArithmetic
 using Test
 using JuMP
 

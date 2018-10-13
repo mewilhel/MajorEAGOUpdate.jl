@@ -15,20 +15,15 @@ mutable struct NodeBB
     DirBranch::Bool
 end
 NodeBB() = NodeBB(Float64[],Float64[],-Inf,Inf,0,-1,false)
-#=
-function NodeData(yl::MVector{N,Float64}, yu::MVector{N,Float64},l::Float64,u::Float64,d::Int) where {N}
-    NodeData(yl, yu, l, u, d)
-end
-=#
 
 # Access functions for broadcasting data easily
 LowerVar(x::NodeBB) = x.LowerVar
 UpperVar(x::NodeBB) = x.UpperVar
 LowerBound(x::NodeBB) = x.LowerBound
 UpperBound(x::NodeBB) = x.UpperBound
-NodeDepth(x::NodeBB) = x.NodeDepth
-NodeID(x::NodeBB) = x.NodeID
+Depth(x::NodeBB) = x.Depth
 LastBranch(x::NodeBB) = x.LastBranch
+DirBranch(x::NodeBB) = x.DirBranch
 
 """
 EAGO.NodeHistory

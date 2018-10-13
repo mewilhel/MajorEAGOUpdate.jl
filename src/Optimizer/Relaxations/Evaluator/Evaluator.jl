@@ -48,8 +48,8 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     subexpression_linearity::Vector{JuMP.Derivatives.Linearity}
     subexpressions_as_julia_expressions::Vector{Any}
     last_x::Vector{T}
-    jac_storage
-    user_output_buffer
+    jac_storage::Vector{T}
+    user_output_buffer::Vector{T}
     eval_objective_timer::Float64
     eval_constraint_timer::Float64
     eval_objective_gradient_timer::Float64
@@ -69,7 +69,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
 end
 
 eltype(x::Evaluator{T}) where T  = T
-    
+
 include("Passes.jl")
 include("GetInfo.jl")
 include("Load.jl")

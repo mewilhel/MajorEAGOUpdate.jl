@@ -1,11 +1,26 @@
-function SetValueConstruct end
-function SetValuePost end
+function SetValueConstruct(i::Int,x_values::Vector{Float64},node::NodeBB) where N
+    @inbounds MC{N}(x_values[i],x_values[i], Interval{Float64}(node.LowerVar[i],node.UpperVar[i]),seedg(Float64,i,N),seedg(Float64,i,N),false)
+end
 
-function set_forward_eval(storage::Vector{T},
-                          nd::AbstractVector{JuMP.NodeData}, adj, const_values,
-                          parameter_values, current_node::NodeBB, x_values::Vector{T},
-                          subexpression_values, user_input_buffer = [];
-                          user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
+function SetValuePost(x_values::Vector{Float64},i::Int,node::NodeBB,val::MC{N}) where N
+    lower = 0.0
+    upper = 0.0
+    for j in 1:N
+        @inbounds cv_val = cv_grad[i]
+        @inbounds cc_val = cc_grad[i]
+        @inbounds lower += cv_val > 0.0 ? cv_val*node.LowerVar[i] : cv_val*node.UpperVar[i]
+        @inbounds upper += cc_val > 0.0 ? cc_val*node.UpperVar[i] : cc_val*node.LowerVar[i]
+    end
+    lower = max(lower,lo(val))
+    upper = min(upper,hi(val))
+    MC{N}(val.cv,val.cc,val.Interval(lower,upper),val.cv_grad,val.cc_grad,val.cnst)
+end
+
+function forward_eval(storage::Vector{T},
+                      nd::AbstractVector{JuMP.NodeData}, adj, const_values,
+                      parameter_values, current_node::NodeBB, x_values::Vector{T},
+                      subexpression_values, user_input_buffer = [];
+                      user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
 
     @assert length(storage) >= length(nd)
 
@@ -16,7 +31,7 @@ function set_forward_eval(storage::Vector{T},
         # compute the value of node k
         @inbounds nod = nd[k]
         if nod.nodetype == VARIABLE
-            @inbounds storage[k] = SetValueConstruct(x_values[nod.index],current_node)
+            @inbounds storage[k] = SetValueConstruct(nod.index,x_values,current_node)
         elseif nod.nodetype == VALUE
             @inbounds storage[k] = const_values[nod.index]
         elseif nod.nodetype == SUBEXPRESSION
@@ -148,7 +163,7 @@ function set_forward_eval(storage::Vector{T},
 end
 
 function forward_eval_all(d::Evaluator,x)
-    subexpr_values = d.subexpression_forward_values
+    subexpr_values = d.subexpression_values
     user_operators = d.m.nlp_data.user_operators::JuMP.Derivatives.UserOperatorRegistry
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
@@ -190,17 +205,14 @@ function reverse_eval(reverse_storage::Vector{T},
             continue
         end
         @inbounds rev_parent = reverse_storage[nod.parent]
-        @inbounds reverse_storage[k] = ifelse(rev_parent == 0.0 && !isfinite(partial), rev_parent, rev_parent*partial)
+        @inbounds reverse_storage[k] = ifelse(rev_parent == 0.0, rev_parent, rev_parent*partial)
     end
 
     nothing
 end
 
+# looks good
 function reverse_eval_all(d::Evaluator,x)
-    # do a reverse pass on all expressions at x
-    subexpr_reverse_values = d.subexpression_reverse_values
-    subexpr_values = d.subexpression_forward_values
-    grad_storage = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
         reverse_eval(ex.reverse_storage, ex.nd, ex.adj)

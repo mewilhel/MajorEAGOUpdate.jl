@@ -6,6 +6,8 @@ using Printf
 using SparseArrays
 
 using JuMP
+using JuMP.Derivatives
+
 using Ipopt
 using DiffRules
 using Reexport

@@ -153,6 +153,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     # Feasibility-Based Bound Tightening Options
     CPWalkDepth::Int
     CPWalkRepts::Int
+    EvalWalkRepts::Int
+    EvalReverse::Bool
 
     # Options for Poor Man's LP
     PoorManLPDepth::Int
@@ -297,6 +299,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         # Feasibility-Based Bound Tightening Options
         m.CPWalkDepth = 10
         m.CPWalkRepts = 10
+        m.EvalWalkRepts = 1
+        m.EvalReverse = false
 
         # Options for Repetition (If DBBT Performed Well)
         m.MaximumRepetitions = 1
