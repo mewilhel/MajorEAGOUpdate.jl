@@ -29,3 +29,17 @@ cv(x::MC) = x.cv
 cc_grad(x::MC) = x.cc_grad
 cv_grad(x::MC) = x.cv_grad
 cnst(x::MC) = x.cnst
+
+
+"""
+    MC_Relaxations!(val::Integer)
+Set differentiability of relaxations used.
+"""
+function MC_Differentiability!(val::Integer)
+  diff_relax = val>0
+  if (diff_relax>0)
+    MC_param.mu = val
+  else
+    MC_param.mu = 0
+  end
+end

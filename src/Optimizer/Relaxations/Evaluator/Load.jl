@@ -1,6 +1,14 @@
-copy_to_function(T::S,x::JuMP.FunctionStorage) where {S<:DataType} = FunctionSetStorage{T}(x.nd, x.adj, x.const_values, T[], x.grad_sparsity, x.hess_I, x.hess_J, x.dependent_subexpressions)
+function copy_to_function(T::S,x::JuMP.FunctionStorage) where {S<:DataType}
+    println("T: $T")
+    temp = Array{T}(undef,length(x.nd))
+    FunctionSetStorage{T}(x.nd, x.adj, x.const_values, temp, x.grad_sparsity, x.hess_I, x.hess_J, x.dependent_subexpressions)
+end
 
-copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType} = SubexpressionSetStorage{T}(x.nd, x.adj, x.const_values, T[], x.Linearity)
+function copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType}
+    println("T: $T")
+    temp = Array{T}(undef,length(x.nd))
+    SubexpressionSetStorage{T}(x.nd, x.adj, x.const_values, temp, x.Linearity)
+end
 
 # TO DO
 function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.AbstractNLPEvaluator}

@@ -19,6 +19,7 @@ MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
     Add unconstrained variables to models
 =#
 function MOI.add_variable(m::Optimizer)
+    println("ran me")
     m.VariableNumber += 1
     m.NonlinearVariable[m.VariableNumber] = false
     push!(m.VariableInfo, VariableInfo())

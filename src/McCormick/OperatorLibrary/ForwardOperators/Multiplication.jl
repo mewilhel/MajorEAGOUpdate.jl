@@ -62,39 +62,39 @@ function gCxAcv(alpha, beta ,lambda ,nu ,x1::MC{N},x2::MC{N}) where N
 
 		# calculates the convex relaxation
 		tempGxA1a = LmdDel*NuDel*abs((betlo-nu.lo)/NuDel-(lambda.hi-term1)/LmdDel)^mu1
-		tempGxA1 = half(Float64)*(term1*NuSum+betlo*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA1a)
+		tempGxA1 = 0.5*(term1*NuSum+betlo*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA1a)
 		tempGxA2a = LmdDel*NuDel*abs((bethi-nu.lo)/NuDel-(lambda.hi-term2)/LmdDel)^mu1
-		tempGxA2 = half(Float64)*(term2*NuSum+bethi*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA2a)
+		tempGxA2 = 0.5*(term2*NuSum+bethi*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA2a)
 		tempGxA3a = LmdDel*NuDel*abs((term3-nu.lo)/NuDel-(lambda.hi-alplo)/LmdDel)^mu1
-		tempGxA3 = half(Float64)*(alplo*NuSum+term3*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA3a)
+		tempGxA3 = 0.5*(alplo*NuSum+term3*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA3a)
 		tempGxA4a = LmdDel*NuDel*abs((term4-nu.lo)/NuDel-(lambda.hi-alphi)/LmdDel)^mu1
-		tempGxA4 = half(Float64)*(alphi*NuSum+term4*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA4a)
+		tempGxA4 = 0.5*(alphi*NuSum+term4*LmdSum-(lambda.lo*nu.lo+lambda.hi*nu.hi)+tempGxA4a)
 
 		# gets minima which is cv/cc/Intv depending on arguments
 		a = min(tempGxA1,tempGxA2,tempGxA3,tempGxA4)
 
 		if (a == tempGxA1)
 				psi_mul = (betlo-nu.lo)/NuDel - (lambda.hi-term1)/LmdDel
-				psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-				psi_mult_y1 = half(Float64)*(LmdSum+mu1T*(LmdDel)*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_y1 = 0.5*(LmdSum+mu1T*(LmdDel)*(psi_mul)*abs(psi_mul)^mu1n)
 		elseif (a == tempGxA2)
 				psi_mul = (bethi-nu.lo)/NuDel-(lambda.hi-term2)/LmdDel
-				psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-				psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		elseif (a == tempGxA3)
 				psi_mul = (term3-nu.lo)/NuDel-(lambda.hi-alplo)/LmdDel
-				psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-				psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		else
 				psi_mul = (term4-nu.lo)/NuDel-(lambda.hi-alphi)/LmdDel
-				psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-				psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+				psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		end
 
-    	grad = max(zero(Float64),psi_mult_x1)*x1.cv_grad+
-			   min(zero(Float64),psi_mult_x1)*x1.cc_grad+
-			   max(zero(Float64),psi_mult_y1)*x2.cv_grad+
-			   min(zero(Float64),psi_mult_y1)*x2.cc_grad
+    	grad = max(0.0,psi_mult_x1)*x1.cv_grad+
+			   min(0.0,psi_mult_x1)*x1.cc_grad+
+			   max(0.0,psi_mult_y1)*x2.cv_grad+
+			   min(0.0,psi_mult_y1)*x2.cc_grad
 
     return a,grad
 end
@@ -159,38 +159,38 @@ function gCxAcc(alpha, beta, lambda, nu, x1::MC{N}, x2::MC{N}) where N
 
 		# calculates the convex relaxation
 		tempGxA1a = LmdDel*NuDel*abs((betlo-nu.lo)/NuDel-(lambda.hi-term1)/LmdDel)^mu1
-		tempGxA1 = half(Float64)*(term1*NuSum+betlo*LmdSum-NuDotLmd+tempGxA1a)
+		tempGxA1 = 0.5*(term1*NuSum+betlo*LmdSum-NuDotLmd+tempGxA1a)
 		tempGxA2a = LmdDel*NuDel*abs((bethi-nu.lo)/NuDel-(lambda.hi-term2)/LmdDel)^mu1
-		tempGxA2 = half(Float64)*(term2*NuSum+bethi*LmdSum-NuDotLmd+tempGxA2a)
+		tempGxA2 = 0.5*(term2*NuSum+bethi*LmdSum-NuDotLmd+tempGxA2a)
 		tempGxA3a = LmdDel*NuDel*abs((term3-nu.lo)/NuDel-(lambda.hi-alplo)/LmdDel)^mu1
-		tempGxA3 = half(Float64)*(alplo*NuSum+term3*LmdSum-NuDotLmd+tempGxA3a)
+		tempGxA3 = 0.5*(alplo*NuSum+term3*LmdSum-NuDotLmd+tempGxA3a)
 		tempGxA4a = LmdDel*NuDel*abs((term4-nu.lo)/NuDel-(lambda.hi-alphi)/LmdDel)^mu1
-		tempGxA4 = half(Float64)*(alphi*NuSum+term4*LmdSum-NuDotLmd+tempGxA4a)
+		tempGxA4 = 0.5*(alphi*NuSum+term4*LmdSum-NuDotLmd+tempGxA4a)
 
 		# gets minima which is cv/cc/Intv depending on arguments
 		a = min(tempGxA1,tempGxA2,tempGxA3,tempGxA4)
 
 	   if (a == tempGxA1)
 		   psi_mul = (betlo-nu.lo)/NuDel - (lambda.hi-term1)/LmdDel
-		   psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-		   psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+		   psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+		   psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		elseif (a == tempGxA2)
 			psi_mul = (bethi-nu.lo)/NuDel - (lambda.hi-term2)/LmdDel
-			psi_mult_x1 = half(Float64)*(NuSum+mu1*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-			psi_mult_y1 = half(Float64)*(LmdSum+mu1*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_x1 = 0.5*(NuSum+mu1*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_y1 = 0.5*(LmdSum+mu1*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		elseif (a == tempGxA3)
 			psi_mul = (term3-nu.lo)/NuDel - (lambda.hi-alplo)/LmdDel
-			psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-			psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		else
 			psi_mul= (term4-nu.lo)/NuDel - (lambda.hi-alphi)/LmdDel
-			psi_mult_x1 = half(Float64)*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
-			psi_mult_y1 = half(Float64)*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_x1 = 0.5*(NuSum+mu1T*NuDel*(psi_mul)*abs(psi_mul)^mu1n)
+			psi_mult_y1 = 0.5*(LmdSum+mu1T*LmdDel*(psi_mul)*abs(psi_mul)^mu1n)
 		end
-		grad2::SVector{N,Float64} = max(zero(Float64),psi_mult_x1)*x1.cc_grad+
-							  min(zero(Float64),psi_mult_x1)*x1.cv_grad-
-							  max(zero(Float64),psi_mult_y1)*x2.cc_grad-
-							  min(zero(Float64),psi_mult_y1)*x2.cv_grad
+		grad2::SVector{N,Float64} = max(0.0,psi_mult_x1)*x1.cc_grad+
+							        min(0.0,psi_mult_x1)*x1.cv_grad-
+							        max(0.0,psi_mult_y1)*x2.cc_grad-
+							        min(0.0,psi_mult_y1)*x2.cv_grad
     return a,grad2
 end
 
@@ -253,13 +253,13 @@ function gCxAIntv(alpha,beta,lambda,nu,x1::MC{N},x2::MC{N}) where N
 
 		# calculates the convex relaxation
 		tempGxA1a = LmdDel*NuDel*abs((betlo-nu.lo)/NuDel-(lambda.hi-term1)/LmdDel)^mu1
-		tempGxA1 =  half(Float64)*(term1*NuSum+betlo*LmdSum-NuLmd+tempGxA1a)
+		tempGxA1 =  0.5*(term1*NuSum+betlo*LmdSum-NuLmd+tempGxA1a)
 		tempGxA2a = LmdDel*NuDel*abs((bethi-nu.lo)/NuDel-(lambda.hi-term2)/LmdDel)^mu1
-		tempGxA2 =  half(Float64)*(term2*NuSum+bethi*LmdSum-NuLmd+tempGxA2a)
+		tempGxA2 =  0.5*(term2*NuSum+bethi*LmdSum-NuLmd+tempGxA2a)
 		tempGxA3a = LmdDel*NuDel*abs((term3-nu.lo)/NuDel-(lambda.hi-alplo)/LmdDel)^mu1
-		tempGxA3 =  half(Float64)*(alplo*NuSum+term3*LmdSum-NuLmd+tempGxA3a)
+		tempGxA3 =  0.5*(alplo*NuSum+term3*LmdSum-NuLmd+tempGxA3a)
 		tempGxA4a = LmdDel*NuDel*abs((term4-nu.lo)/NuDel-(lambda.hi-alphi)/LmdDel)^mu1
-		tempGxA4 = half(Float64)*(alphi*NuSum+term4*LmdSum-NuLmd+tempGxA4a)
+		tempGxA4 = 0.5*(alphi*NuSum+term4*LmdSum-NuLmd+tempGxA4a)
 
 		# gets minima which is cv/cc/Intv depending on arguments
 		return min(tempGxA1,tempGxA2,tempGxA3,tempGxA4)

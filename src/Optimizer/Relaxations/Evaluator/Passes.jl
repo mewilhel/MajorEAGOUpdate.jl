@@ -1,80 +1,126 @@
-function SetValueConstruct(i::Int,x_values::Vector{Float64},node::NodeBB) where N
+function SetValueConstruct(i::Int,N::Int,x_values::Vector{Float64},node::NodeBB)
     @inbounds MC{N}(x_values[i],x_values[i], Interval{Float64}(node.LowerVar[i],node.UpperVar[i]),seedg(Float64,i,N),seedg(Float64,i,N),false)
 end
 
-function SetValuePost(x_values::Vector{Float64},i::Int,node::NodeBB,val::MC{N}) where N
-    lower = 0.0
-    upper = 0.0
-    for j in 1:N
+#=
+function SetValuePost(x_values::Vector{Float64},val::MC{N},node::NodeBB) where N
+    lower = val.cv
+    upper = val.cc
+    for i in 1:N
         @inbounds cv_val = cv_grad[i]
         @inbounds cc_val = cc_grad[i]
-        @inbounds lower += cv_val > 0.0 ? cv_val*node.LowerVar[i] : cv_val*node.UpperVar[i]
-        @inbounds upper += cc_val > 0.0 ? cc_val*node.UpperVar[i] : cc_val*node.LowerVar[i]
+        @inbounds lower += cv_val > 0.0 ? cv_val*(node.LowerVar[i]-x_values[i]) : cv_val*(node.UpperVar[i]-x_values[i])
+        @inbounds upper += cc_val > 0.0 ? cc_val*(node.UpperVar[i]-x_values[i]) : cc_val*(node.LowerVar[i]-x_values[i])
     end
     lower = max(lower,lo(val))
     upper = min(upper,hi(val))
     MC{N}(val.cv,val.cc,val.Interval(lower,upper),val.cv_grad,val.cc_grad,val.cnst)
 end
+=#
+SetValuePost(x_values::Vector{Float64},val::MC{N},node::NodeBB) where N = val
 
-function forward_eval(storage::Vector{T},
-                      nd::AbstractVector{JuMP.NodeData}, adj, const_values,
-                      parameter_values, current_node::NodeBB, x_values::Vector{T},
-                      subexpression_values, user_input_buffer = [];
+function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, setvalued::Vector{Bool},
+                      nd::AbstractVector{JuMP.NodeData}, adj, const_values, parameter_values, current_node::NodeBB,
+                      x_values::Vector{Float64}, subexpression_values, user_input_buffer = [];
                       user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
 
-    @assert length(storage) >= length(nd)
+    @assert length(numberstorage) >= length(nd)
+    @assert length(setstorage) >= length(nd)
+    @assert length(setvalued) >= length(nd)
 
     children_arr = rowvals(adj)
+    N = length(x_values)
 
     for k in length(nd):-1:1
 
         # compute the value of node k
         @inbounds nod = nd[k]
         if nod.nodetype == VARIABLE
-            @inbounds storage[k] = SetValueConstruct(nod.index,x_values,current_node)
+            @inbounds setstorage[k] = SetValueConstruct(nod.index,N,x_values,current_node)
+            setvalued[k] = true
         elseif nod.nodetype == VALUE
-            @inbounds storage[k] = const_values[nod.index]
+            @inbounds numberstorage[k] = const_values[nod.index]
+            setvalued[k] = false
         elseif nod.nodetype == SUBEXPRESSION
-            @inbounds storage[k] = subexpression_values[nod.index]
+            @inbounds isset = setvalued[nod.index]
+            if isset
+                @inbounds setstorage[k] = subexpression_values[nod.index]
+            else
+                @inbounds numberstorage[k] = subexpression_values[nod.index]
+            end
+            setvalued[k] == isset
         elseif nod.nodetype == PARAMETER
-            @inbounds storage[k] = parameter_values[nod.index]
+            @inbounds numberstorage[k] = parameter_values[nod.index]
+            setvalued[k] = false
         elseif nod.nodetype == CALL
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
             n_children = length(children_idx)
             if op == 1 # :+
-                tmp_sum = zero(T)
-                    for c_idx in children_idx
+                tmp_sum = 0.0
+                isset = true
+                for c_idx in children_idx
                     @inbounds ix = children_arr[c_idx]
                     @inbounds tmp_sum += storage[ix]
+                    @inbounds isset &= setvalued[ix]
                 end
-                storage[k] = tmp_sum
+                setvalued[k] = isset
+                if (isset)
+                    setstorage[k] = tmp_sum
+                else
+                    numberstorage[k] = tmp_sum
+                end
             elseif op == 2 # :-
                 child1 = first(children_idx)
                 @assert n_children == 2
                 @inbounds ix1 = children_arr[child1]
                 @inbounds ix2 = children_arr[child1+1]
+                @inbounds isset = setvalued[ix1]
+                @inbounds isset &= setvalued[ix2]
                 @inbounds tmp_sub = storage[ix1]
                 @inbounds tmp_sub -= storage[ix2]
-                storage[k] = SetValuePost(tmp_sub, current_node)
-            elseif op == 3 # :*
-                tmp_prod = one(T)
-                for c_idx in children_idx
-                    @inbounds tmp_prod = SetValuePost(tmp_prod*storage[children_arr[c_idx]], current_node)
+                setvalued[k] = isset
+                if (isset)
+                    setstorage[k] = SetValuePost(x_values, tmp_sub, current_node)
+                else
+                    numberstorage[k] = tmp_sum
                 end
-                @inbounds storage[k] = tmp_prod
+            elseif op == 3 # :*
+                tmp_prod = 1.0
+                isset = true
+                for c_idx in children_idx
+                    @inbounds isset &= setvalued[children_arr[c_idx]]
+                    if (isset)
+                        @inbounds tmp_prod = SetValuePost(x_values, tmp_prod*storage[children_arr[c_idx]], current_node)
+                    else
+                        @inbounds tmp_prod *= storage[children_arr[c_idx]]
+                    end
+                end
+                if (isset)
+                    setstorage[k] = tmp_prod
+                else
+                    numberstorage[k] = tmp_prod
+                end
             elseif op == 4 # :^
                 @assert n_children == 2
                 idx1 = first(children_idx)
                 idx2 = last(children_idx)
                 @inbounds ix1 = children_arr[idx1]
                 @inbounds ix2 = children_arr[idx2]
-                @inbounds base = storage[ix1]
-                @inbounds exponent = storage[ix2]
+                if (setvalued[ix1])
+                    @inbounds base = setstorage[ix1]
+                else
+                    @inbounds exponent = numberstorage[ix1]
+                end
+                if (setvalued[ix2])
+                    @inbounds base = setstorage[ix2]
+                else
+                    @inbounds exponent = numberstorage[ix2]
+                end
                 if exponent == 1
                     @inbounds storage[k] = base
                 else
-                    storage[k] = SetValuePost(pow(base,exponent), current_node)
+                    storage[k] = SetValuePost(x_values, pow(base,exponent), current_node)
                 end
             elseif op == 5 # :/
                 @assert n_children == 2
@@ -84,14 +130,14 @@ function forward_eval(storage::Vector{T},
                 @inbounds ix2 = children_arr[idx2]
                 @inbounds numerator = storage[ix1]
                 @inbounds denominator = storage[ix2]
-                storage[k] = SetValuePost(numerator/denominator, current_node)
+                storage[k] = SetValuePost(x_values, numerator/denominator, current_node)
             elseif op == 6 # ifelse
                 @assert n_children == 3
                 idx1 = first(children_idx)
                 @inbounds condition = storage[children_arr[idx1]]
                 @inbounds lhs = storage[children_arr[idx1+1]]
                 @inbounds rhs = storage[children_arr[idx1+2]]
-                storage[k] = SetValuePost(ifelse(condition == 1, lhs, rhs), current_node)
+                storage[k] = SetValuePost(x_values, ifelse(condition == 1, lhs, rhs), current_node)
             elseif op >= USER_OPERATOR_ID_START
                 evaluator = user_operators.multivariate_operator_evaluator[op - USER_OPERATOR_ID_START+1]
                 f_input = view(user_input_buffer, 1:n_children)
@@ -122,7 +168,7 @@ function forward_eval(storage::Vector{T},
             else
                 fval = eval_univariate(op, child_val)
             end
-            @inbounds storage[k] = SetValuePost(fval, current_node)
+            @inbounds storage[k] = SetValuePost(x_values, fval, current_node)
         elseif nod.nodetype == COMPARISON
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
@@ -143,16 +189,16 @@ function forward_eval(storage::Vector{T},
                     result &= cval_lhs > cval_rhs
                 end
             end
-            storage[k] = SetValuePost(result, current_node)
+            storage[k] = SetValuePost(x_values, result, current_node)
         elseif nod.nodetype == LOGIC
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
             cval_lhs = (storage[children_arr[first(children_idx)]] == 1)
             cval_rhs = (storage[children_arr[last(children_idx)]] == 1)
             if op == 1
-                storage[k] = SetValuePost(cval_lhs && cval_rhs, current_node)
+                storage[k] = SetValuePost(x_values, cval_lhs && cval_rhs, current_node)
             elseif op == 2
-                storage[k] = SetValuePost(cval_lhs || cval_rhs, current_node)
+                storage[k] = SetValuePost(x_values, cval_lhs || cval_rhs, current_node)
             end
         else
             error("Unrecognized node type $(nod.nodetype).")
@@ -168,23 +214,20 @@ function forward_eval_all(d::Evaluator,x)
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
-        subexpr_values[k] = forward_eval(ex.forward_storage,
-                                         ex.nd, ex.adj, ex.const_values,
+        subexpr_values[k] = forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
                                          d.parameter_values, d.current_node,
                                          x, subexpr_values, user_input_buffer,
                                          user_operators=user_operators)
     end
     if d.has_nlobj
         ex = d.objective
-        forward_eval(ex.forward_storage,
-                     ex.nd, ex.adj, ex.const_values,
+        forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x, subexpr_values, user_input_buffer,
                      user_operators=user_operators)
     end
     for ex in d.constraints
-        forward_eval(ex.forward_storage,
-                     ex.nd, ex.adj, ex.const_values,
+        forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x,subexpr_values, user_input_buffer,
                      user_operators=user_operators)
