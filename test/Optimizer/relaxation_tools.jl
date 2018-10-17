@@ -1,32 +1,49 @@
-
-src = EAGO.Optimizer()
-trg = Ipopt.Optimizer()
-
-MOI.add_variables(src,3)
-
-@constraint(m, x + y == 10)
-@constraint(m, x + 2*z <= 10)
-@constraint(m, 3*y + z >= 10)
-
-src = m.moi_backend.model.optimizer
-
-EAGO.RelaxLinear!(src,trg)
-
-term1a = trg.linear_le_constraints[1][1]
-term1b = trg.linear_ge_constraints[1][1]
-term1c = trg.linear_eq_constraints[1][1]
-
-term2a = trg.linear_le_constraints[1][2]
-term2b = trg.linear_ge_constraints[1][2]
-term2c = trg.linear_eq_constraints[1][2]
-
-#=
 @testset "Linear Relaxations" begin
-    linear_le_constraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}}}
-    linear_ge_constraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}}}
-    linear_eq_constraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}}}
+    src = EAGO.Optimizer()
+    model = EAGO.Optimizer()
+
+    x = MOI.add_variables(model,3)
+    x = MOI.add_variables(src,3)
+
+    func1 = MOI.ScalarAffineFunction{Float64}(MOI.ScalarAffineTerm.([5.0,-2.3],[x[1],x[2]]),2.0)
+    func2 = MOI.ScalarAffineFunction{Float64}(MOI.ScalarAffineTerm.([4.0,-2.2],[x[2],x[3]]),2.1)
+    func3 = MOI.ScalarAffineFunction{Float64}(MOI.ScalarAffineTerm.([3.0,-3.3],[x[1],x[3]]),2.2)
+
+    set1 = MOI.LessThan{Float64}(1.0)
+    set2 = MOI.GreaterThan{Float64}(2.0)
+    set3 = MOI.EqualTo{Float64}(3.0)
+
+    MOI.add_constraint(src, func1, set1)
+    MOI.add_constraint(src, func2, set2)
+    MOI.add_constraint(src, func3, set3)
+
+    EAGO.RelaxLinear!(src,model)
+
+    @test model.LinearLEQConstraints[1][1].constant == 2.0
+    @test model.LinearGEQConstraints[1][1].constant == 2.1
+    @test model.LinearEQConstraints[1][1].constant == 2.2
+    @test model.LinearLEQConstraints[1][1].terms[1].coefficient == 5.0
+    @test model.LinearGEQConstraints[1][1].terms[1].coefficient == 4.0
+    @test model.LinearEQConstraints[1][1].terms[1].coefficient == 3.0
+    @test model.LinearLEQConstraints[1][1].terms[2].coefficient == -2.3
+    @test model.LinearGEQConstraints[1][1].terms[2].coefficient == -2.2
+    @test model.LinearEQConstraints[1][1].terms[2].coefficient == -3.3
+    @test model.LinearLEQConstraints[1][1].terms[1].variable_index.value == 1
+    @test model.LinearGEQConstraints[1][1].terms[1].variable_index.value == 2
+    @test model.LinearEQConstraints[1][1].terms[1].variable_index.value == 1
+    @test model.LinearLEQConstraints[1][1].terms[2].variable_index.value == 2
+    @test model.LinearGEQConstraints[1][1].terms[2].variable_index.value == 3
+    @test model.LinearEQConstraints[1][1].terms[2].variable_index.value == 3
+    @test MOI.LessThan{Float64}(1.0) == model.LinearLEQConstraints[1][2]
+    @test MOI.GreaterThan{Float64}(2.0) == model.LinearGEQConstraints[1][2]
+    @test MOI.EqualTo{Float64}(3.0) == model.LinearEQConstraints[1][2]
+    @test model.LinearEQConstraints[1][3] == 2
+    @test model.LinearEQConstraints[1][3] == 2
+    @test model.LinearEQConstraints[1][3] == 2
 end
-=#
+
+@testset "Quadratic Relaxations" begin
+end
 
 #=
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -86,10 +103,5 @@ MOI.eval_constraint_jacobian_transpose_product(d::Evaluator, y, x, w)
 #MOI.hessian_lagrangian_structure(d::Evaluator)
 #MOI.eval_hessian_lagrangian_product(d::Evaluator, h, x, v, σ, μ)
 #MOI.eval_hessian_lagrangian(d::Evaluator, H, x, σ, μ)
-end
-=#
-
-#=
-@testset "Quadratic Relaxations" begin
 end
 =#

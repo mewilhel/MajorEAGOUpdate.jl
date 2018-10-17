@@ -49,6 +49,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     ContinuousNumber::Int
     IntegerNumber::Int
     ConstraintNumber::Int
+    LinearNumber::Int
+    QuadraticNumber::Int
 
     CurrentLowerInfo::LowerInfo                       # Problem solution info for lower bounding program
     CurrentUpperInfo::UpperInfo                       # Problem solution info for upper bounding program
@@ -63,6 +65,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     QuadraticLEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.LessThan{Float64},Int}}
     QuadraticGEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.GreaterThan{Float64},Int}}
     QuadraticEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.EqualTo{Float64},Int}}
+    QuadraticConvexity::Vector{Bool}
 
     UniQuadraticLEQConstraints::Vector{Tuple{Float64,Float64,Float64,Int}}
     UniQuadraticGEQConstraints::Vector{Tuple{Float64,Float64,Float64,Int}}

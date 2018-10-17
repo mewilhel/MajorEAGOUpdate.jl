@@ -1,22 +1,5 @@
 function MOI.empty!(m::Optimizer)
-
-    empty!(m.VariableInfo)
-    m.NLPData = empty_nlp_data()
-    m.OptimizationSense = MOI.FeasibilitySense
-    m.TerminationStatusCode = MOI.OtherError
-    m.StartedSolve = false
-    m.FailedSolver = NoFailure
-
-    m.LowerProblem = DummyFunction
-    m.UpperProblem = DummyFunction
-    m.Preprocess = DummyFunction
-    m.Postprocess = DummyFunction
-    m.RepeatCheck = DummyFunction
-    m.ConvergenceCheck = DummyFunction
-    m.TerminationCheck = DummyFunction
-    m.NodeStorage = DummyFunction
-    m.NodeSelection = DummyFunction
-    m.BisectionFunction = DummyFunction
+    m = Optimizer()
 end
 
 function MOI.is_empty(m::Optimizer)

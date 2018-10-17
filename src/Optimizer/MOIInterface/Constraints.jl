@@ -2,6 +2,7 @@ MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.Less
 MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.GreaterThan{Float64}}) = true
 MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.EqualTo{Float64}}) = true
 MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.Interval{Float64}}) = true
+MOI.supports_constraint(::Optimizer, ::Type{MOI.SingleVariable}, ::Type{MOI.ZeroOne}) = true
 
 MOI.supports_constraint(::Optimizer, ::Type{MOI.ScalarAffineFunction{Float64}}, ::Type{MOI.LessThan{Float64}}) = true
 MOI.supports_constraint(::Optimizer, ::Type{MOI.ScalarAffineFunction{Float64}}, ::Type{MOI.GreaterThan{Float64}}) = true
@@ -19,7 +20,6 @@ MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
     Add unconstrained variables to models
 =#
 function MOI.add_variable(m::Optimizer)
-    println("ran me")
     m.VariableNumber += 1
     m.NonlinearVariable[m.VariableNumber] = false
     push!(m.VariableInfo, VariableInfo())
@@ -27,7 +27,7 @@ function MOI.add_variable(m::Optimizer)
 end
 MOI.add_variables(m::Optimizer, n::Int) = [MOI.add_variable(m) for i in 1:n]
 
-#=
+
 function MOI.add_constraint(m::Optimizer, v::MOI.SingleVariable, zo::MOI.ZeroOne)
     vi = v.variable
     check_inbounds(m, vi)
@@ -41,37 +41,6 @@ function MOI.add_constraint(m::Optimizer, v::MOI.SingleVariable, zo::MOI.ZeroOne
     m.VariableInfo[vi.value].is_integer = true
     return MOI.ConstraintIndex{MOI.SingleVariable, MOI.ZeroOne}(vi.value)
 end
-
-```
-Transforms semiinteger variable into multiple 0-1 variables & creates converter to get number back
-```
-function MOI.add_constraint(m::Optimizer, v::MOI.SingleVariable, si::MOI.Semiinteger{T}) where T <: Real
-    vi = v.variable
-    check_inbounds(m, vi)
-    has_upper_bound(m, vi) && error("Upper bound on variable $vi already exists.")
-    has_lower_bound(m, vi) && error("Lower bound on variable $vi already exists.")
-    is_fixed(m, vi) && error("Variable $vi is fixed. Cannot also set upper bound.")
-
-    envar = 1 + Int(si.lower + si.upper)   # number of values to represent
-    birep = bin(envar,2)                   # largest binary variable (string form)
-    binlen = length(birep)                 # binary variables in 0-1 representation
-    addconstr = (binlen^2) - envar         # number of constraints to add
-
-    # add constraints to eliminate nonactive values
-    for i=1:binlen
-        MOI.add_constraint(m, v, MOI.ZeroOne())
-    end
-
-    # add variables
-    m.VariableInfo[vi.value].lower_bound = 0.0
-    m.VariableInfo[vi.value].upper_bound = 1.0
-    m.VariableInfo[vi.value].has_lower_bound = true
-    m.VariableInfo[vi.value].has_upper_bound = true
-    m.VariableInfo[vi.value].is_integer = true
-
-    return MOI.ConstraintIndex{MOI.SingleVariable, MOI.ZeroOne}(vi.value)
-end
-=#
 
 #=
     Add single variable constraints
@@ -127,6 +96,8 @@ function MOI.add_constraint(m::Optimizer, v::MOI.SingleVariable, eq::MOI.EqualTo
     end
     m.VariableInfo[vi.value].lower_bound = eq.value
     m.VariableInfo[vi.value].upper_bound = eq.value
+    m.VariableInfo[vi.value].has_lower_bound = true
+    m.VariableInfo[vi.value].has_upper_bound = true
     m.VariableInfo[vi.value].is_fixed = true
     return MOI.ConstraintIndex{MOI.SingleVariable, MOI.EqualTo{Float64}}(vi.value)
 end
@@ -179,8 +150,8 @@ macro define_addconstraint_quadratic(function_type, set_type, array_name)
                 m.NonlinearVariable[i.variable_index_1.value] = true
                 m.NonlinearVariable[i.variable_index_2.value] = true
             end
-            push!(m.$(array_name), (func, set, length(m.$(array_name))))
-            return MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name)))
+            push!(m.$(array_name), (func, set, length(m.$(array_name))+1))
+            return MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name))+1)
         end
     end
 end
