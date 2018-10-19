@@ -4,6 +4,7 @@ import MathOptInterface
 
 using Printf
 using SparseArrays
+using LinearAlgebra
 
 using JuMP
 using JuMP.Derivatives
@@ -24,6 +25,7 @@ include("Optimizer/IpoptSupplement.jl")
 include("Optimizer/MathOptInterfaceEAGO.jl")
 
 include("Optimizer/Relaxations/StandardForms/Linear.jl")
+include("Optimizer/Relaxations/StandardForms/Quadratic.jl")
 include("Optimizer/Relaxations/Evaluator/Evaluator.jl")
 
 end # module

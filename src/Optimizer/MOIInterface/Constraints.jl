@@ -136,7 +136,9 @@ macro define_addconstraint_linear(function_type, set_type, array_name)
         function MOI.add_constraint(m::Optimizer, func::$function_type, set::$set_type)
             check_inbounds(m, func)
             push!(m.$(array_name), (func, set, length(func.terms)))
-            return MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name)))
+            indx = MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name)))
+            m.ConstraintConvexity[indx] = true
+            return indx
         end
     end
 end
@@ -151,7 +153,9 @@ macro define_addconstraint_quadratic(function_type, set_type, array_name)
                 m.NonlinearVariable[i.variable_index_2.value] = true
             end
             push!(m.$(array_name), (func, set, length(m.$(array_name))+1))
-            return MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name))+1)
+            indx = MOI.ConstraintIndex{$function_type, $set_type}(length(m.$(array_name)))
+            m.ConstraintConvexity[indx] = false
+            return indx
         end
     end
 end

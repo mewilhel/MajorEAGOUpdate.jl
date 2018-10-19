@@ -37,6 +37,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     ProbCountUpper::Vector{Float64}
 
     VItoSto::Dict{Int,Int}
+    StoToVI::Dict{Int,Int}
     ConstraintConvexity::Dict{MOI.ConstraintIndex,Bool}
     ConstraintLabel::Dict{Int,Symbol}
 
@@ -192,7 +193,9 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.InitialIntegerValues = Vector{Int}[]                      # Potential Integer Values
         m.NLPData = empty_nlp_data()
 
+        m.ConstraintConvexity = Dict{MOI.ConstraintIndex,Bool}()
         m.VItoSto = Dict{Int,Int}()
+        m.StoToVI = Dict{Int,Int}()
         m.NonlinearVariable = Dict{Int,Bool}()
         m.PseudoCostLower = Float64[]
         m.PseudoCostUpper = Float64[]

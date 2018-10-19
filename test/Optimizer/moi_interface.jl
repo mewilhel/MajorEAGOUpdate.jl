@@ -181,13 +181,7 @@ end
 @testset "Add Zero-One Constraint" begin
 end
 
-model = EAGO.Optimizer()
-booltest =  MOI.is_empty(model)
-
 @testset "Empty/Isempty, EaGO Model " begin
     model = EAGO.Optimizer()
     @test MOI.is_empty(model)
 end
-
-#=
-=#

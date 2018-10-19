@@ -27,10 +27,15 @@ cc_pow4(x,xL,xU,n) = (xU == xL) ? xU : ((xU-x)/(xU-xL))*xL^n +((x-xL)/(xU-xL))*x
 dcc_pow4(x,xL,xU,n) = (xU == xL) ? 0.0 : (xU^n-xL^n)/(xU-xL)
 
 # convex/concave relaxation of integer powers of 1/x for negative reals
-cv_negpowneg(x,xL,xU,n) = isodd(n) ? cc_negpowpos(x,xL,xU,n) : x^n
-dcv_negpowneg(x,xL,xU,n) = isodd(n) ? dcc_negpowpos(x,xL,xU,n) : n*x^(n-1)
-cc_negpowneg(x,xL,xU,n) = isodd(n) ? x^n : (xU == xL) ? xU : ((xU-x)/(xU-xL))*xL^n +((x-xL)/(xU-xL))*xU^n
-dcc_negpowneg(x,xL,xU,n) = isodd(n) ? n*x^(n-1) : (xU == xL) ? 0.0 : (xU^n-xL^n)/(xU-xL)
+cv_negpowneg(x,xL,xU,n::Int) = isodd(n) ? cc_negpowpos(x,xL,xU,n) : x^n
+dcv_negpowneg(x,xL,xU,n::Int) = isodd(n) ? dcc_negpowpos(x,xL,xU,n) : n*x^(n-1)
+cc_negpowneg(x,xL,xU,n::Int) = isodd(n) ? x^n : (xU == xL) ? xU : ((xU-x)/(xU-xL))*xL^n +((x-xL)/(xU-xL))*xU^n
+dcc_negpowneg(x,xL,xU,n::Int) = isodd(n) ? n*x^(n-1) : (xU == xL) ? 0.0 : (xU^n-xL^n)/(xU-xL)
+
+cv_negpowneg(x,xL,xU,n::Float64) = isodd(Int(n)) ? cc_negpowpos(x,xL,xU,n) : x^n
+dcv_negpowneg(x,xL,xU,n::Float64) = isodd(Int(n)) ? dcc_negpowpos(x,xL,xU,n) : n*x^(n-1)
+cc_negpowneg(x,xL,xU,n::Float64) = isodd(Int(n)) ? x^n : (xU == xL) ? xU : ((xU-x)/(xU-xL))*xL^n +((x-xL)/(xU-xL))*xU^n
+dcc_negpowneg(x,xL,xU,n::Float64) = isodd(Int(n)) ? n*x^(n-1) : (xU == xL) ? 0.0 : (xU^n-xL^n)/(xU-xL)
 
 function cv_powodd(x,xL,xU,n)
   (xU <= 0.0) && return cc_pow4(x,xL,xU,n)
@@ -117,18 +122,23 @@ function cc_pow(x,xL,xU,c)
   if isinteger(c)
     if (c > 0)
      if (isodd(Int(c)))
+		println("cc pow-pos odd")
         return cc_powodd(x,xL,xU,c)
       else
+		 println("cc pow-pos even")
         return cc_pow4(x,xL,xU,c)
       end
     else
       if (xU < 0.0)
         if (isodd(Int(c)))
+		  println("cc pow-neg dom-neg odd")
           return cc_powodd(x,xL,xU,c)
         else
+		  println("cc pow-neg dom-neg even")
           return cc_negpowneg(x,xL,xU,c)
         end
       elseif (xL > 0.0)
+		 println("cc pow-neg dom-pos")
         return cc_negpowpos(x,xL,xU,c)
       else
         error("Function unbounded on domain")
@@ -246,14 +256,19 @@ end
 
 function pow(x::MC{N},c::Float64) where N
   if (c == 0)
+	  println("ran zero arc")
     return one(x)
   elseif (c == 1)
+	  println("ran one arc")
     return x
   elseif (c == 2)
+	  println("ran two arc")
     return sqr(x)
   elseif (!isinteger(c) && lo(x.Intv) <= 0.0)
+	  println("ran float arc")
     return exp(c*log(x))
   else
+	println("ran other integer arc")
     Intv = x.Intv^c
     xL = x.Intv.lo
     xU = x.Intv.hi

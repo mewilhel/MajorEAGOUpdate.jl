@@ -68,3 +68,7 @@ function is_integer_feasible(m::Optimizer)
     end
     return int_feas
 end
+
+function ReverseDict(dict)
+    Dict(value => key for (key, value) in dict)
+end

@@ -592,6 +592,7 @@ end
 @testset "Power" begin
 
     # tests powers (square)
+    println("test 1")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(3.0,7.0); Interval(3.0,7.0)])
     X = MC{2}(4.0,4.0,xIBox[1],a,a,false)
@@ -606,6 +607,7 @@ end
     @test isapprox(out.Intv.hi,49,atol=1E-4)
 
     # tests powers (^-2 on positive domain)
+    println("test 2")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(3.0,7.0);Interval(3.0,7.0)])
     X = MC{2}(4.0,4.0,xIBox[1],a,a,false)
@@ -620,6 +622,7 @@ end
     @test isapprox(out.Intv.hi,0.111112,atol=1E-4)
 
     # tests powers (^-2 on negative domain)
+    println("test 3")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,-3.0);Interval(-8.0,-3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -634,6 +637,7 @@ end
     @test isapprox(out.Intv.hi,0.111112,atol=1E-4)
 
     # tests powers (^1)
+    println("test 4")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,-3.0),Interval(-8.0,-3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -648,6 +652,7 @@ end
     @test isapprox(out.Intv.hi,-3.0,atol=1E-4)
 
     # tests powers (^2)
+    println("test 5")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,-3.0),Interval(-8.0,-3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -662,6 +667,7 @@ end
     @test isapprox(out.Intv.hi,64.0,atol=1E-4)
 
     # tests powers (^3)
+    println("test 6")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,-3.0);Interval(-8.0,-3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -676,6 +682,7 @@ end
     @test isapprox(out.Intv.hi,-27,atol=1E-4)
 
     # tests powers (^4)
+    println("test 7")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,-3.0),Interval(-8.0,-3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -690,6 +697,7 @@ end
     @test isapprox(out.Intv.hi,4096,atol=1E-4)
 
     # tests powers (^3 greater than zero ISSUE WITH CC)
+    println("test 8")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(3.0,8.0),Interval(3.0,8.0)])
     X = MC{2}(4.5,4.5,xIBox[1],a,a,false)
@@ -704,6 +712,7 @@ end
     @test isapprox(out.Intv.hi,512,atol=1E-4)
 
     # tests powers (^4 greater than zero)
+    println("test 9")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(3.0,8.0),Interval(3.0,8.0)])
     X = MC{2}(4.5,4.5,xIBox[1],a,a,false)
@@ -718,6 +727,7 @@ end
     @test isapprox(out.Intv.hi,4096,atol=1E-4)
 
     # tests powers (^4 zero in range)
+    println("test 10")
     a = seedg(Float64,1,2)
     xIBox = SVector{2,Interval{Float64}}([Interval(-8.0,3.0),Interval(-8.0,3.0)])
     X = MC{2}(-4.5,-4.5,xIBox[1],a,a,false)
@@ -740,6 +750,7 @@ end
     Xn = MC{2}(-4.0,-4.0,-xIBox[1],a,a,false)
     Xz = MC{2}(-2.0,-2.0,Interval(-3.0,1.0),a,a,false)
 
+    println("test 11")
     out14 = inv(X)
     @test isapprox(out14.cc,0.2857142857142857,atol=1E-5)
     @test isapprox(out14.cv,0.25,atol=1E-5)
@@ -751,6 +762,7 @@ end
     @test isapprox(out14.Intv.hi,0.333334,atol=1E-5)
     out14a = inv(Xn)
 
+    println("test 12")
     out23 = pow(X,2)
     @test isapprox(out23.cc,19.0,atol=1E-5)
     @test isapprox(out23.cv,16.0,atol=1E-5)
@@ -761,6 +773,7 @@ end
     @test isapprox(out23.Intv.lo,9.0,atol=1E-5)
     @test isapprox(out23.Intv.hi,49.0,atol=1E-5)
 
+    println("test 13")
     out23a = pow(Xn,2)
     @test isapprox(out23a.cc,19.0,atol=1E-5)
     @test isapprox(out23a.cv,16.0,atol=1E-5)
@@ -771,6 +784,7 @@ end
     @test isapprox(out23a.Intv.lo,9.0,atol=1E-5)
     @test isapprox(out23a.Intv.hi,49.0,atol=1E-5)
 
+    println("test 14")
     out23b = pow(Xz,2)
     @test isapprox(out23b.cc,7.0,atol=1E-5)
     @test isapprox(out23b.cv,4.0,atol=1E-5)
@@ -781,6 +795,7 @@ end
     @test isapprox(out23b.Intv.lo,0.0,atol=1E-5)
     @test isapprox(out23b.Intv.hi,9.0,atol=1E-5)
 
+    println("test 15")
     out1a = pow(X,3)
     @test isapprox(out1a.cc,106.0,atol=1E-5)
     @test isapprox(out1a.cv,64.0,atol=1E-5)
@@ -791,6 +806,7 @@ end
     @test isapprox(out1a.Intv.lo,27.0,atol=1E-5)
     @test isapprox(out1a.Intv.hi,343.0,atol=1E-5)
 
+    println("test 16")
     out1b = pow(Xn,3)
     @test isapprox(out1b.cc,-64.0,atol=1E-5)
     @test isapprox(out1b.cv,-106.0,atol=1E-5)
@@ -801,6 +817,7 @@ end
     @test isapprox(out1b.Intv.lo,-343.0,atol=1E-5)
     @test isapprox(out1b.Intv.hi,-27.0,atol=1E-5)
 
+    println("test 17")
     out1c = pow(Xz,3)
     @test isapprox(out1c.cc,-7.75,atol=1E-5)
     @test isapprox(out1c.cv,-20.25,atol=1E-5)
@@ -811,6 +828,7 @@ end
     @test isapprox(out1c.Intv.lo,-27.0,atol=1E-5)
     @test isapprox(out1c.Intv.hi,1.0,atol=1E-5)
 
+    println("test 18")
     out2a = pow(X,-3)
     @test isapprox(out2a.cc,0.02850664075153871,atol=1E-5)
     @test isapprox(out2a.cv,0.015625,atol=1E-5)
@@ -821,6 +839,7 @@ end
     @test isapprox(out2a.Intv.lo,0.00291545,atol=1E-5)
     @test isapprox(out2a.Intv.hi,0.0370371,atol=1E-5)
 
+    println("test 19")
     out2b = pow(Xn,-3)
     @test isapprox(out2b.cc,-0.015625,atol=1E-5)
     @test isapprox(out2b.cv,-0.02850664075153871,atol=1E-5)
@@ -831,6 +850,7 @@ end
     @test isapprox(out2b.Intv.lo,-0.0370371,atol=1E-5)
     @test isapprox(out2b.Intv.hi,-0.00291545,atol=1E-5)
 
+    println("test 20")
     out3a = pow(X,-4)
     @test isapprox(out3a.cc,0.009363382541225106,atol=1E-5)
     @test isapprox(out3a.cv,0.00390625,atol=1E-5)
@@ -841,6 +861,7 @@ end
     @test isapprox(out3a.Intv.lo,0.000416493,atol=1E-5)
     @test isapprox(out3a.Intv.hi,0.0123457,atol=1E-5)
 
+    println("test 21")
     out3b = pow(Xn,-4)
     @test isapprox(out3b.cc,0.009363382541225106,atol=1E-5)
     @test isapprox(out3b.cv,0.00390625,atol=1E-5)
@@ -851,6 +872,7 @@ end
     @test isapprox(out3b.Intv.lo,0.000416493,atol=1E-5)
     @test isapprox(out3b.Intv.hi,0.0123457,atol=1E-5)
 
+    println("test 22")
     out4 = pow(X,4)
     @test isapprox(out4.cc,661.0,atol=1E-5)
     @test isapprox(out4.cv,256.0,atol=1E-5)
@@ -861,6 +883,7 @@ end
     @test isapprox(out4.Intv.lo,81.0,atol=1E-5)
     @test isapprox(out4.Intv.hi,2401.0,atol=1E-5)
 
+    println("test 23")
     out4a = pow(Xn,4)
     @test isapprox(out4a.cc,661.0,atol=1E-5)
     @test isapprox(out4a.cv,256.0,atol=1E-5)
@@ -871,6 +894,7 @@ end
     @test isapprox(out4a.Intv.lo,81.0,atol=1E-5)
     @test isapprox(out4a.Intv.hi,2401.0,atol=1E-5)
 
+    println("test 24")
     out4b = pow(Xz,4)
     @test isapprox(out4b.cc,61.0,atol=1E-5)
     @test isapprox(out4b.cv,16.0,atol=1E-5)
