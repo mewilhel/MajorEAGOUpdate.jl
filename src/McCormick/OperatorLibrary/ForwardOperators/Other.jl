@@ -83,12 +83,20 @@ end
 ########### Defines sign
 sign(x::MC) = -step(-x) + step(x)
 
-cv_abs(x,xL,xU) = (x >= 0.0) ? xU*(x/xU)^(MC_param.mu+1) : -xL*(x/xL)^(MC_param.mu+1)
-dcv_abs(x,xL,xU) = (x >= 0.0) ? (MC_param.mu+1)*(x/xU)^MC_param.mu : -(MC_param.mu+1)*(x/xL)^MC_param.mu
-cc_abs(x::Float64,xL::Float64,xU::Float64) = line_seg(x,xL,abs(xL),xU,abs(xU)),dline_seg(x,xL,abs(xL),xU,abs(xU),(x >= 0.0) ? (MC_param.mu+1)*(x/xU)^MC_param.mu : -(MC_param.mu+1)*(x/xL)^MC_param.mu)
-dcc_abs(x::Float64,xL::Float64,xU::Float64) = dline_seg(x,xL,abs(xL),xU,abs(xU),(x >= 0.0) ? (MC_param.mu+1)*(x/xU)^MC_param.mu : -(MC_param.mu+1)*(x/xL)^MC_param.mu)
-cc_abs_NS(x::Float64,xL::Float64,xU::Float64) = line_seg(x,xL,abs(xL),xU,abs(xU))
-dcc_abs_NS(x::Float64,xL::Float64,xU::Float64) = dline_seg(x,xL,abs(xL),xU,abs(xU),sign(x))
+function cv_abs(x,xL,xU)
+	 (x >= 0.0) ? xU*(x/xU)^(MC_param.mu+1) : -xL*(x/xL)^(MC_param.mu+1)
+ end
+function dcv_abs(x,xL,xU)
+	 (x >= 0.0) ? (MC_param.mu+1)*(x/xU)^MC_param.mu : -(MC_param.mu+1)*(x/xL)^MC_param.mu
+ end
+function cc_abs(x::Float64,xL::Float64,xU::Float64)
+	(x >= 0.0) ? (x/xU)^(MC_param.mu+1) : -(x/xL)^(MC_param.mu+1)
+end
+function dcc_abs(x::Float64,xL::Float64,xU::Float64)
+	(MC_param.mu+1)*(x/xU)^MC_param.mu : -(MC_param.mu+1)*(x/xL)^MC_param.mu
+end
+cc_abs_NS(x::Float64,xL::Float64,xU::Float64) = line_seg(x,xL,abs(xL),xU,abs(xU))[1]
+dcc_abs_NS(x::Float64,xL::Float64,xU::Float64) = dline_seg(x,xL,abs(xL),xU,abs(xU),sign(x))[1]
 cv_abs_NS(x::Float64,xL::Float64,xU::Float64) = abs(x)
 dcv_abs_NS(x::Float64,xL::Float64,xU::Float64) = sign(x)
 
@@ -108,11 +116,11 @@ function abs(x::MC{N}) where N
     cv = cv_abs(midcv,x.Intv.lo,x.Intv.hi)
     dcv = dcv_abs(midcv,x.Intv.lo,x.Intv.hi)
     gdcc1 = cc_abs(x.cv,x.Intv.lo,x.Intv.hi)
-	  gdcv1 = cv_abs(x.cv,x.Intv.lo,x.Intv.hi)
-	  gdcc2 = cc_abs(x.cc,x.Intv.lo,x.Intv.hi)
-	  gdcv2 = cv_abs(x.cc,x.Intv.lo,x.Intv.hi)
-	  cv_grad = max(0.0,gdcv1)*x.cv_grad + min(0.0,gdcv2)*x.cc_grad
-	  cc_grad = min(0.0,gdcc1)*x.cv_grad + max(0.0,gdcc2)*x.cc_grad
+	gdcv1 = cv_abs(x.cv,x.Intv.lo,x.Intv.hi)
+	gdcc2 = cc_abs(x.cc,x.Intv.lo,x.Intv.hi)
+	gdcv2 = cv_abs(x.cc,x.Intv.lo,x.Intv.hi)
+	cv_grad = max(0.0,gdcv1)*x.cv_grad + min(0.0,gdcv2)*x.cc_grad
+	cc_grad = min(0.0,gdcc1)*x.cv_grad + max(0.0,gdcc2)*x.cc_grad
   else
     cc = cc_abs_NS(midcc, x.Intv.lo, x.Intv.hi)
     dcc = dcc_abs_NS(midcc, x.Intv.lo, x.Intv.hi)

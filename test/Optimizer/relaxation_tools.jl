@@ -182,7 +182,7 @@ EAGO.RelaxQuadratic!(target, model, n)
 end
 
 
-#=
+
 m = Model(with_optimizer(EAGO.Optimizer))
 @variable(m, x)
 @variable(m, y)
@@ -194,7 +194,7 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @constraint(m, y >= 0)
 
 @NLconstraint(m, cos(y - x ^ 2) <= 0)
-#ttt = JuMP.build(m)
+
 source_evaluator = JuMP.NLPEvaluator(m)
 MOI.initialize(source_evaluator , Symbol[:Grad])
 opt = m.moi_backend.model.optimizer
@@ -210,12 +210,13 @@ user_operators = built_evaluator.m.nlp_data.user_operators
 nlp_data = built_evaluator.m.nlp_data
 user_input_buffer = built_evaluator.jac_storage
 
-EAGO.forward_eval(built_evaluator.objective.storage,
+EAGO.forward_eval(built_evaluator.objective.setstorage, built_evaluator.objective.numberstorage,
+                  built_evaluator.objective.numvalued,
                   built_evaluator.objective.nd, built_evaluator.objective.adj,
                   built_evaluator.objective.const_values, built_evaluator.parameter_values,
                   built_evaluator.current_node, xpoint, built_evaluator.subexpression_values,
                   user_input_buffer, user_operators = user_operators)
-=#
+
 #EAGO.forward_eval_all(built_evaluator, xpoint)
 #=
 # Tests evaluation points

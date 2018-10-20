@@ -9,3 +9,7 @@ function RelaxLinear!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
         MOI.add_constraint(trg, func, set)
     end
 end
+
+# Relaxes nonlinear term via MidPoint Affine calculation
+function MidPointAffine!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
+end

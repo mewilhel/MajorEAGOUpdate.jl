@@ -3,7 +3,9 @@ mutable struct FunctionSetStorage{T}
     nd::Vector{JuMP.NodeData}
     adj::SparseMatrixCSC{Bool,Int}
     const_values::Vector{Float64}
-    storage::Vector{T}
+    setstorage::Vector{T}
+    numberstorage::Vector{Float64}
+    numvalued::Vector{Bool}
     grad_sparsity::Vector{Int}
     hess_I::Vector{Int}
     hess_J::Vector{Int}
@@ -14,18 +16,24 @@ mutable struct SubexpressionSetStorage{T}
     nd::Vector{JuMP.NodeData}
     adj::SparseMatrixCSC{Bool,Int}
     const_values::Vector{Float64}
-    storage::Vector{T}
+    setstorage::Vector{T}
+    numberstorage::Vector{Float64}
+    numvalued::Vector{Bool}
     linearity::JuMP.Derivatives.Linearity
 end
 
-function SubexpressionSetStorage(nd::Vector{JuMP.NodeData}, const_values, num_variables, subexpression_linearity, moi_index_to_consecutive_index)
+function SubexpressionSetStorage(T,nd::Vector{JuMP.NodeData}, const_values, num_variables, subexpression_linearity, moi_index_to_consecutive_index)
 
     nd = JuMP.replace_moi_variables(nd, moi_index_to_consecutive_index)
+    len_nd = length(nd)
     adj = adjmat(nd)
-    storage = zeros(length(nd))
+    setstorage = zeros(T,len_nd)
+    numberstorage = zeros(len_nd)
+    numvalued = zeros(Bool,len_nd)
     linearity = JuMP.classify_linearity(nd, adj, subexpression_linearity)
 
-    return SubexpressionStorage(nd, adj, const_values, storage, linearity[1])
+    return SubexpressionSetStorage{T}(nd, adj, const_values, setstorage, numberstorage,
+                                      numvalued, linearity[1])
 end
 
 "Container for calculating relaxations of nonlinear terms"

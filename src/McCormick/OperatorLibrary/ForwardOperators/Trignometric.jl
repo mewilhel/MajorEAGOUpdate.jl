@@ -53,8 +53,6 @@ function cv_cosin(x,xL,xU)
     if abs(xm-xj)<MC_param.env_tol
       r = 0.0
     else
-      println("xm: $xm")
-      println("xj: $xj")
       r = (cos(xm)-cos(xj))/(xm-xj)
     end
     return cos(xm)+r*(x-xm),r

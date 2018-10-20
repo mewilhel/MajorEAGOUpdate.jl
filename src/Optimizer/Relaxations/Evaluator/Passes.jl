@@ -19,164 +19,274 @@ end
 =#
 SetValuePost(x_values::Vector{Float64},val::MC{N},node::NodeBB) where N = val
 
-function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, setvalued::Vector{Bool},
+function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, numvalued::Vector{Bool},
                       nd::AbstractVector{JuMP.NodeData}, adj, const_values, parameter_values, current_node::NodeBB,
-                      x_values::Vector{Float64}, subexpression_values, user_input_buffer = [];
+                      x_values::Vector{Float64}, subexpression_values, user_input_buffer;
                       user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
 
     @assert length(numberstorage) >= length(nd)
     @assert length(setstorage) >= length(nd)
-    @assert length(setvalued) >= length(nd)
+    @assert length(numvalued) >= length(nd)
 
     children_arr = rowvals(adj)
     N = length(x_values)
 
     for k in length(nd):-1:1
-
         # compute the value of node k
         @inbounds nod = nd[k]
-        if nod.nodetype == VARIABLE
-            @inbounds setstorage[k] = SetValueConstruct(nod.index,N,x_values,current_node)
-            setvalued[k] = true
-        elseif nod.nodetype == VALUE
+        if nod.nodetype == JuMP.Derivatives.VARIABLE
+            setstorage[k] = SetValueConstruct(nod.index,N,x_values,current_node)
+            println("AT k: $k,   VARIABLE assigment yeilds setstorage: $(setstorage[k])")
+            numvalued[k] = false
+        elseif nod.nodetype == JuMP.Derivatives.VALUE
             @inbounds numberstorage[k] = const_values[nod.index]
-            setvalued[k] = false
-        elseif nod.nodetype == SUBEXPRESSION
-            @inbounds isset = setvalued[nod.index]
-            if isset
-                @inbounds setstorage[k] = subexpression_values[nod.index]
-            else
+            println("AT k: $k,   Value assignment yeilds numstorage: $(numberstorage[k])")
+            numvalued[k] = true
+        elseif nod.nodetype == JuMP.Derivatives.SUBEXPRESSION
+            @inbounds isnum = numvalued[nod.index]
+            if isnum
                 @inbounds numberstorage[k] = subexpression_values[nod.index]
+            else
+                @inbounds setstorage[k] = subexpression_values[nod.index]
             end
-            setvalued[k] == isset
-        elseif nod.nodetype == PARAMETER
+            println("AT k: $k,   Subexpression evaluation yeilds subexpr: $(subexpression_values[nod.index])")
+            numvalued[k] == isnum
+        elseif nod.nodetype == JuMP.Derivatives.PARAMETER
             @inbounds numberstorage[k] = parameter_values[nod.index]
-            setvalued[k] = false
-        elseif nod.nodetype == CALL
+            println("AT k: $k,   Parameter assignment yeilds numstorage: $(numberstorage[k])")
+            numvalued[k] = true
+        elseif nod.nodetype == JuMP.Derivatives.CALL
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
             n_children = length(children_idx)
             if op == 1 # :+
                 tmp_sum = 0.0
-                isset = true
+                isnum = true
+                chdset = true
                 for c_idx in children_idx
                     @inbounds ix = children_arr[c_idx]
-                    @inbounds tmp_sum += storage[ix]
-                    @inbounds isset &= setvalued[ix]
+                    @inbounds chdset = numvalued[c_ix]
+                    if (chdset)
+                        @inbounds tmp_sum += setstorage[c_ix]
+                    else
+                        @inbounds tmp_sum += numberstorage[c_ix]
+                    end
+                    @inbounds isnum &= chdset
                 end
-                setvalued[k] = isset
-                if (isset)
-                    setstorage[k] = tmp_sum
-                else
+                numvalued[k] = isnum
+                if (isnum)
                     numberstorage[k] = tmp_sum
+                else
+                    setstorage[k] = tmp_sum
                 end
+                println("AT k: $k,   PLUS CALL assigment yeilds setstorage: $(tmp_sum)")
             elseif op == 2 # :-
                 child1 = first(children_idx)
                 @assert n_children == 2
                 @inbounds ix1 = children_arr[child1]
                 @inbounds ix2 = children_arr[child1+1]
-                @inbounds isset = setvalued[ix1]
-                @inbounds isset &= setvalued[ix2]
-                @inbounds tmp_sub = storage[ix1]
-                @inbounds tmp_sub -= storage[ix2]
-                setvalued[k] = isset
-                if (isset)
-                    setstorage[k] = SetValuePost(x_values, tmp_sub, current_node)
+                @inbounds chdset1 = numvalued[ix1]
+                @inbounds chdset2 = numvalued[ix2]
+                @inbounds isnum = chdset1
+                @inbounds isnum &= chdset2
+                if chdset1
+                    @inbounds tmp_sub = numberstorage[ix1]
                 else
+                    @inbounds tmp_sub = setstorage[ix1]
+                end
+                if chdset2
+                    @inbounds tmp_sub -= numberstorage[ix2]
+                else
+                    @inbounds tmp_sub -= setstorage[ix2]
+                end
+                numvalued[k] = isnum
+                if (isnum)
                     numberstorage[k] = tmp_sum
+                    println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(tmp_sum)")
+                else
+                    setstorage[k] = SetValuePost(x_values, tmp_sub, current_node)
+                    println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
             elseif op == 3 # :*
                 tmp_prod = 1.0
-                isset = true
+                isnum = true
+                chdset = true
                 for c_idx in children_idx
-                    @inbounds isset &= setvalued[children_arr[c_idx]]
-                    if (isset)
-                        @inbounds tmp_prod = SetValuePost(x_values, tmp_prod*storage[children_arr[c_idx]], current_node)
+                    chdset = numvalued[children_arr[c_idx]]
+                    println("references: $(children_arr[c_idx])")
+                    println("chdset: $(chdset)")
+                    isnum &= chdset
+                    if (chdset)
+                        tmp_prod *= numberstorage[children_arr[c_idx]]
+                        println("tmp_prod: $tmp_prod")
                     else
-                        @inbounds tmp_prod *= storage[children_arr[c_idx]]
+                        tmp_prod = tmp_prod*setstorage[children_arr[c_idx]]
+                        println("tmp_prod: $tmp_prod")
                     end
                 end
-                if (isset)
-                    setstorage[k] = tmp_prod
-                else
+                if (isnum)
                     numberstorage[k] = tmp_prod
+                    println("AT k: $k,   MULT CALL assigment yeilds numberstorage: $(tmp_prod)")
+                else
+                    setstorage[k] = SetValuePost(x_values, tmp_prod, current_node)
+                    println("AT k: $k,   MULT CALL assigment yeilds setstorage: $(tmp_prod)")
                 end
+                numvalued[k] = isnum
             elseif op == 4 # :^
                 @assert n_children == 2
                 idx1 = first(children_idx)
                 idx2 = last(children_idx)
                 @inbounds ix1 = children_arr[idx1]
                 @inbounds ix2 = children_arr[idx2]
-                if (setvalued[ix1])
+                @inbounds chdset1 = numvalued[ix1]
+                @inbounds chdset2 = numvalued[ix2]
+                if chdset1
+                    @inbounds base = numberstorage[ix1]
+                else
                     @inbounds base = setstorage[ix1]
-                else
-                    @inbounds exponent = numberstorage[ix1]
                 end
-                if (setvalued[ix2])
-                    @inbounds base = setstorage[ix2]
-                else
+                if chdset2
                     @inbounds exponent = numberstorage[ix2]
+                else
+                    @inbounds exponent = setstorage[ix2]
                 end
                 if exponent == 1
-                    @inbounds storage[k] = base
+                    if chdset1
+                        @inbounds numberstorage[k] = base
+                    else
+                        @inbounds setstorage[k] = base
+                    end
                 else
-                    storage[k] = SetValuePost(x_values, pow(base,exponent), current_node)
+                    if chdset1 || chdset2
+                        setstorage[k] = SetValuePost(x_values, pow(base,exponent), current_node)
+                        println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(setstorage[k])")
+                    else
+                        numberstorage[k] = pow(base,exponent)
+                        println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(numberstorage[k])")
+                    end
                 end
+                numvalued[k] = ~(chdset1 || chdset2)
             elseif op == 5 # :/
                 @assert n_children == 2
                 idx1 = first(children_idx)
                 idx2 = last(children_idx)
                 @inbounds ix1 = children_arr[idx1]
                 @inbounds ix2 = children_arr[idx2]
-                @inbounds numerator = storage[ix1]
-                @inbounds denominator = storage[ix2]
-                storage[k] = SetValuePost(x_values, numerator/denominator, current_node)
+                @inbounds chdset1 = numvalued[ix1]
+                @inbounds chdset2 = numvalued[ix2]
+                if chdset1
+                    @inbounds numerator = setstorage[ix1]
+                else
+                    @inbounds numerator = numberstorage[ix1]
+                end
+                if chdset2
+                    @inbounds denominator = setstorage[ix2]
+                else
+                    @inbounds denominator = numberstorage[ix2]
+                end
+                if chdset1 || chdset2
+                    numberstorage[k] = numerator/denominator
+                    println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(numberstorage[k])")
+                else
+                    setstorage[k] = SetValuePost(x_values, numerator/denominator, current_node)
+                    println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(setstorage[k])")
+                end
+                numvalued[k] = chdset1 || chdset2
             elseif op == 6 # ifelse
                 @assert n_children == 3
                 idx1 = first(children_idx)
-                @inbounds condition = storage[children_arr[idx1]]
-                @inbounds lhs = storage[children_arr[idx1+1]]
-                @inbounds rhs = storage[children_arr[idx1+2]]
-                storage[k] = SetValuePost(x_values, ifelse(condition == 1, lhs, rhs), current_node)
-            elseif op >= USER_OPERATOR_ID_START
+                @inbounds chdset1 = numvalued[idx1]
+                if chdset1
+                    @inbounds condition = setstorage[children_arr[idx1]]
+                else
+                    @inbounds condition = numberstorage[children_arr[idx1]]
+                end
+                @inbounds chdset2 = numvalued[children_arr[idx1+1]]
+                @inbounds chdset3 = numvalued[children_arr[idx1+2]]
+                if chdset2
+                    @inbounds lhs = setstorage[children_arr[idx1+1]]
+                else
+                    @inbounds lhs = numberstorage[children_arr[idx1+1]]
+                end
+                if chdset3
+                    @inbounds rhs = setstorage[children_arr[idx1+2]]
+                else
+                    @inbounds rhs = numberstorage[children_arr[idx1+2]]
+                end
+                error("IF ELSE TO DO")
+                #storage[k] = SetValuePost(x_values, ifelse(condition == 1, lhs, rhs), current_node)
+            elseif op >= JuMP.Derivatives.USER_OPERATOR_ID_START
                 evaluator = user_operators.multivariate_operator_evaluator[op - USER_OPERATOR_ID_START+1]
                 f_input = view(user_input_buffer, 1:n_children)
                 r = 1
+                isnum = true
                 for c_idx in children_idx
                     ix = children_arr[c_idx]
-                    f_input[r] = storage[ix]
+                    chdset = numvalued[ix]
+                    isset &= chdset
+                    if chdset
+                        f_input[r] = setstorage[ix]
+                    else
+                        f_input[r] = numberstorage[ix]
+                    end
                     r += 1
                 end
-                fval = MOI.eval_objective(evaluator, f_input)::T
-                storage[k] = fval
-                r = 1
-                for c_idx in children_idx
-                    ix = children_arr[c_idx]
-                    r += 1
+                fval = MOI.eval_objective(evaluator, f_input)
+                if isnum
+                    numberstorage[k] = fval
+                    println("AT k: $k,   START CALL assigment yeilds setstorage: $(numberstorage[k])")
+                else
+                    setstorage[k] = SetValuePost(x_values, fval, current_node)
+                    println("AT k: $k,   START CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
+                numvalued[k] = isnum
             else
                 error("Unsupported operation $(operators[op])")
             end
-        elseif nod.nodetype == CALLUNIVAR # univariate function
+        elseif nod.nodetype == JuMP.Derivatives.CALLUNIVAR # univariate function
             op = nod.index
-            @inbounds child_idx = children_arr[adj.colptr[k]]
-            child_val = storage[child_idx]
-            if op >= USER_UNIVAR_OPERATOR_ID_START
-                userop = op - USER_UNIVAR_OPERATOR_ID_START + 1
-                f = user_operators.univariate_operator_f[userop]
-                fval = f(child_val)::T
+            println("univariate op: $op")
+            child_idx = children_arr[adj.colptr[k]]
+            chdset = numvalued[child_idx]
+            if chdset
+                child_val = numberstorage[child_idx]
             else
-                fval = eval_univariate(op, child_val)
+                child_val = setstorage[child_idx]
             end
-            @inbounds storage[k] = SetValuePost(x_values, fval, current_node)
-        elseif nod.nodetype == COMPARISON
+            if op >= JuMP.Derivatives.USER_UNIVAR_OPERATOR_ID_START
+                userop = op - JuMP.Derivatives.USER_UNIVAR_OPERATOR_ID_START + 1
+                f = user_operators.univariate_operator_f[userop]
+                fval = f(child_val)
+            else
+                #fval = JuMP.Derivatives.eval_univariate(op, child_val)
+                fval = JuMP.Derivatives.eval_univariate(op, child_val)
+            end
+            if chdset
+                @inbounds numberstorage[k] = fval
+            else
+                @inbounds setstorage[k] = SetValuePost(x_values, fval, current_node)
+            end
+            numvalued[k] = chdset
+        elseif nod.nodetype == JuMP.Derivatives.COMPARISON
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
             n_children = length(children_idx)
             result = true
             for r in 1:n_children-1
-                cval_lhs = storage[children_arr[children_idx[r]]]
-                cval_rhs = storage[children_arr[children_idx[r+1]]]
+                ix1 = children_arr[children_idx[r]]
+                ix2 = children_arr[children_idx[r+1]]
+                isnum1 = numvalued[ix1]
+                isnum2 = numvalued[ix2]
+                if isnum1
+                    cval_lhs = numberstorage[ix1]
+                else
+                    cval_lhs = setstorage[ix1]
+                end
+                if isnum2
+                    cval_rhs = numberstorage[ix2]
+                else
+                    cval_rhs = setstorage[ix2]
+                end
                 if op == 1
                     result &= cval_lhs <= cval_rhs
                 elseif op == 2
@@ -189,16 +299,28 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, set
                     result &= cval_lhs > cval_rhs
                 end
             end
-            storage[k] = SetValuePost(x_values, result, current_node)
-        elseif nod.nodetype == LOGIC
+            numberstorage[k] = result
+        elseif nod.nodetype == JuMP.Derivatives.LOGIC
             op = nod.index
             @inbounds children_idx = nzrange(adj,k)
-            cval_lhs = (storage[children_arr[first(children_idx)]] == 1)
-            cval_rhs = (storage[children_arr[last(children_idx)]] == 1)
+            ix1 = children_arr[first(children_idx)]
+            ix2 = children_arr[last(children_idx)]
+            isnum1 = numvalued[ix1]
+            isnum2 = numvalued[ix2]
+            if isnum1
+                cval_lhs = (numberstorage[ix1] == 1)
+            else
+                cval_lhs = (setstorage[ix1] == 1)
+            end
+            if isnum2
+                cval_rhs = (numberstorage[ix2] == 1)
+            else
+                cval_rhs = (setstorage[ix2] == 1)
+            end
             if op == 1
-                storage[k] = SetValuePost(x_values, cval_lhs && cval_rhs, current_node)
+                numberstorage[k] = cval_lhs && cval_rhs
             elseif op == 2
-                storage[k] = SetValuePost(x_values, cval_lhs || cval_rhs, current_node)
+                numberstorage[k] = cval_lhs || cval_rhs
             end
         else
             error("Unrecognized node type $(nod.nodetype).")
@@ -214,20 +336,23 @@ function forward_eval_all(d::Evaluator,x)
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
-        subexpr_values[k] = forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
+        subexpr_values[k] = forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+                                         ex.nd, ex.adj, ex.const_values,
                                          d.parameter_values, d.current_node,
                                          x, subexpr_values, user_input_buffer,
                                          user_operators=user_operators)
     end
     if d.has_nlobj
         ex = d.objective
-        forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
+        forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+                     ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x, subexpr_values, user_input_buffer,
                      user_operators=user_operators)
     end
     for ex in d.constraints
-        forward_eval(ex.storage, ex.nd, ex.adj, ex.const_values,
+        forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+                     ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x,subexpr_values, user_input_buffer,
                      user_operators=user_operators)

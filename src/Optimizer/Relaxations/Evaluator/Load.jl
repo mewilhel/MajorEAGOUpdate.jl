@@ -1,13 +1,19 @@
 function copy_to_function(T::S,x::JuMP.FunctionStorage) where {S<:DataType}
     println("T: $T")
-    temp = Array{T}(undef,length(x.nd))
-    FunctionSetStorage{T}(x.nd, x.adj, x.const_values, temp, x.grad_sparsity, x.hess_I, x.hess_J, x.dependent_subexpressions)
+    temp_set = Array{T}(undef,length(x.nd))
+    temp_flt = Array{Float64}(undef,length(x.nd))
+    temp_bool = Array{Bool}(undef,length(x.nd))
+    FunctionSetStorage{T}(x.nd, x.adj, x.const_values, temp_set, temp_flt, temp_bool,
+                          x.grad_sparsity, x.hess_I, x.hess_J, x.dependent_subexpressions)
 end
 
 function copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType}
     println("T: $T")
-    temp = Array{T}(undef,length(x.nd))
-    SubexpressionSetStorage{T}(x.nd, x.adj, x.const_values, temp, x.Linearity)
+    temp_set = Array{T}(undef,length(x.nd))
+    temp_flt = Array{Float64}(undef,length(x.nd))
+    temp_bool = Array{Bool}(undef,length(x.nd))
+    SubexpressionSetStorage{T}(x.nd, x.adj, x.const_values, temp_set, temp_flt,
+                               temp_bool, x.Linearity)
 end
 
 # TO DO
