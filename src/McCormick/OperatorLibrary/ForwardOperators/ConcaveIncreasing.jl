@@ -19,7 +19,7 @@ for opMC in (:log, :log2, :log10, :log1p, :acosh, :sqrt)
               midcc,cc_id = mid3(cc(x),cv(x),$eps_max)
               midcv,cv_id = mid3(cc(x),cv(x),$eps_min)
               dcv = (xUc > xLc) ? (xUc-xLc)/(xU-xL) : 0.0
-              convex = dcv*midcv + xLc
+              convex = dcv*(midcv-xL)+ xLc
               concave = ($opMC)(midcc)
               concave_grad = mid_grad(cc_grad(x), cv_grad(x), cc_id)*$dop
               convex_grad = mid_grad(cc_grad(x), cv_grad(x), cv_id)*dcv
@@ -37,7 +37,11 @@ for opMC in (:log, :log2, :log10, :log1p, :acosh, :sqrt)
                midcc,cc_id = mid3(cc(x),cv(x),$eps_max)
                midcv,cv_id = mid3(cc(x),cv(x),$eps_min)
                dcv = (xUc > xLc) ? (hi(xIntv)-lo(xIntv))/(xU-xL) : 0.0
-               convex = dcv*midcv + xLc
+               if (x2-x1) == 0.0
+                  convex = xLc
+               else
+                  convex = xLc*((xU-midcv)/(xU-xL)) + xUc*((midcv-xL)/(xU-xL))
+               end
                concave = ($opMC)(midcc)
                convex_grad = ((hi(xIntv)-lo(xIntv))/(xU-xL))*cv_grad(x)
                concave_grad = ($dop)*cc_grad(x)

@@ -34,26 +34,29 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
     for k in length(nd):-1:1
         # compute the value of node k
         @inbounds nod = nd[k]
+        op = nod.index
+        #println("op assigment: $op")
         if nod.nodetype == JuMP.Derivatives.VARIABLE
             setstorage[k] = SetValueConstruct(nod.index,N,x_values,current_node)
-            println("AT k: $k,   VARIABLE assigment yeilds setstorage: $(setstorage[k])")
+            #println("AT k: $k,   VARIABLE assigment yeilds setstorage: $(setstorage[k])")
             numvalued[k] = false
         elseif nod.nodetype == JuMP.Derivatives.VALUE
             @inbounds numberstorage[k] = const_values[nod.index]
-            println("AT k: $k,   Value assignment yeilds numstorage: $(numberstorage[k])")
+            #println("AT k: $k,   Value assignment yeilds numstorage: $(numberstorage[k])")
             numvalued[k] = true
         elseif nod.nodetype == JuMP.Derivatives.SUBEXPRESSION
             @inbounds isnum = numvalued[nod.index]
             if isnum
                 @inbounds numberstorage[k] = subexpression_values[nod.index]
+                #println("AT k: $k,  Subexpression assignment yeilds numstorage: $(numberstorage[k])")
             else
                 @inbounds setstorage[k] = subexpression_values[nod.index]
+                #println("AT k: $k,  Subexpression assignment yeildssetstorage: $(setstorage[k])")
             end
-            println("AT k: $k,   Subexpression evaluation yeilds subexpr: $(subexpression_values[nod.index])")
             numvalued[k] == isnum
         elseif nod.nodetype == JuMP.Derivatives.PARAMETER
             @inbounds numberstorage[k] = parameter_values[nod.index]
-            println("AT k: $k,   Parameter assignment yeilds numstorage: $(numberstorage[k])")
+            #println("AT k: $k,   Parameter assignment yeilds numstorage: $(numberstorage[k])")
             numvalued[k] = true
         elseif nod.nodetype == JuMP.Derivatives.CALL
             op = nod.index
@@ -65,21 +68,22 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 chdset = true
                 for c_idx in children_idx
                     @inbounds ix = children_arr[c_idx]
-                    @inbounds chdset = numvalued[c_ix]
+                    @inbounds chdset = numvalued[ix]
                     if (chdset)
-                        @inbounds tmp_sum += setstorage[c_ix]
+                        @inbounds tmp_sum += numberstorage[ix]
                     else
-                        @inbounds tmp_sum += numberstorage[c_ix]
+                        @inbounds tmp_sum += setstorage[ix]
                     end
                     @inbounds isnum &= chdset
                 end
                 numvalued[k] = isnum
                 if (isnum)
                     numberstorage[k] = tmp_sum
+                    #println("AT k: $k,   PLUS CALL assigment yeilds numberstorage: $(tmp_sum)")
                 else
                     setstorage[k] = tmp_sum
+                    #println("AT k: $k,   PLUS CALL assigment yeilds setstorage: $(tmp_sum)")
                 end
-                println("AT k: $k,   PLUS CALL assigment yeilds setstorage: $(tmp_sum)")
             elseif op == 2 # :-
                 child1 = first(children_idx)
                 @assert n_children == 2
@@ -102,34 +106,34 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 numvalued[k] = isnum
                 if (isnum)
                     numberstorage[k] = tmp_sum
-                    println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(tmp_sum)")
+                    #println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(tmp_sum)")
                 else
                     setstorage[k] = SetValuePost(x_values, tmp_sub, current_node)
-                    println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(setstorage[k])")
+                    #println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
             elseif op == 3 # :*
                 tmp_prod = 1.0
                 isnum = true
                 chdset = true
                 for c_idx in children_idx
-                    chdset = numvalued[children_arr[c_idx]]
-                    println("references: $(children_arr[c_idx])")
-                    println("chdset: $(chdset)")
+                    @inbounds chdset = numvalued[children_arr[c_idx]]
+                    #println("references: $(children_arr[c_idx])")
+                    #println("chdset: $(chdset)")
                     isnum &= chdset
                     if (chdset)
-                        tmp_prod *= numberstorage[children_arr[c_idx]]
-                        println("tmp_prod: $tmp_prod")
+                        @inbounds tmp_prod *= numberstorage[children_arr[c_idx]]
+                        #println("tmp_prod: $tmp_prod")
                     else
-                        tmp_prod = tmp_prod*setstorage[children_arr[c_idx]]
-                        println("tmp_prod: $tmp_prod")
+                        @inbounds tmp_prod = tmp_prod*setstorage[children_arr[c_idx]]
+                        #println("tmp_prod: $tmp_prod")
                     end
                 end
                 if (isnum)
                     numberstorage[k] = tmp_prod
-                    println("AT k: $k,   MULT CALL assigment yeilds numberstorage: $(tmp_prod)")
+                    #println("AT k: $k,   MULT CALL assigment yeilds numberstorage: $(tmp_prod)")
                 else
                     setstorage[k] = SetValuePost(x_values, tmp_prod, current_node)
-                    println("AT k: $k,   MULT CALL assigment yeilds setstorage: $(tmp_prod)")
+                    #println("AT k: $k,   MULT CALL assigment yeilds setstorage: $(tmp_prod)")
                 end
                 numvalued[k] = isnum
             elseif op == 4 # :^
@@ -159,10 +163,10 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 else
                     if chdset1 || chdset2
                         setstorage[k] = SetValuePost(x_values, pow(base,exponent), current_node)
-                        println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(setstorage[k])")
+                        #println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(setstorage[k])")
                     else
                         numberstorage[k] = pow(base,exponent)
-                        println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(numberstorage[k])")
+                        #println("AT k: $k,   EXP CALL assigment yeilds setstorage: $(numberstorage[k])")
                     end
                 end
                 numvalued[k] = ~(chdset1 || chdset2)
@@ -186,10 +190,10 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 end
                 if chdset1 || chdset2
                     numberstorage[k] = numerator/denominator
-                    println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(numberstorage[k])")
+                    #println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(numberstorage[k])")
                 else
                     setstorage[k] = SetValuePost(x_values, numerator/denominator, current_node)
-                    println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(setstorage[k])")
+                    #println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
                 numvalued[k] = chdset1 || chdset2
             elseif op == 6 # ifelse
@@ -221,23 +225,23 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 r = 1
                 isnum = true
                 for c_idx in children_idx
-                    ix = children_arr[c_idx]
-                    chdset = numvalued[ix]
+                    @inbounds ix = children_arr[c_idx]
+                    @inbounds chdset = numvalued[ix]
                     isset &= chdset
                     if chdset
-                        f_input[r] = setstorage[ix]
+                        @inbounds f_input[r] = setstorage[ix]
                     else
-                        f_input[r] = numberstorage[ix]
+                        @inbounds f_input[r] = numberstorage[ix]
                     end
                     r += 1
                 end
                 fval = MOI.eval_objective(evaluator, f_input)
                 if isnum
                     numberstorage[k] = fval
-                    println("AT k: $k,   START CALL assigment yeilds setstorage: $(numberstorage[k])")
+                    #println("AT k: $k,   START CALL assigment yeilds setstorage: $(numberstorage[k])")
                 else
                     setstorage[k] = SetValuePost(x_values, fval, current_node)
-                    println("AT k: $k,   START CALL assigment yeilds setstorage: $(setstorage[k])")
+                    #println("AT k: $k,   START CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
                 numvalued[k] = isnum
             else
@@ -245,25 +249,30 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
             end
         elseif nod.nodetype == JuMP.Derivatives.CALLUNIVAR # univariate function
             op = nod.index
-            println("univariate op: $op")
-            child_idx = children_arr[adj.colptr[k]]
-            chdset = numvalued[child_idx]
+            #println("univariate op: $op")
+            @inbounds child_idx = children_arr[adj.colptr[k]]
+            @inbounds chdset = numvalued[child_idx]
+            #println("chdset: $chdset")
             if chdset
-                child_val = numberstorage[child_idx]
+                @inbounds child_val = numberstorage[child_idx]
             else
-                child_val = setstorage[child_idx]
+                @inbounds child_val = setstorage[child_idx]
             end
+            #println("child_val: $child_val")
             if op >= JuMP.Derivatives.USER_UNIVAR_OPERATOR_ID_START
                 userop = op - JuMP.Derivatives.USER_UNIVAR_OPERATOR_ID_START + 1
-                f = user_operators.univariate_operator_f[userop]
+                @inbounds f = user_operators.univariate_operator_f[userop]
                 fval = f(child_val)
             else
                 #fval = JuMP.Derivatives.eval_univariate(op, child_val)
-                fval = JuMP.Derivatives.eval_univariate(op, child_val)
+                fval = eval_univariate_set(op, child_val)
             end
+            #println("fval: $fval")
             if chdset
                 @inbounds numberstorage[k] = fval
             else
+                wham = SetValuePost(x_values, fval, current_node)
+                #println("wham: $wham")
                 @inbounds setstorage[k] = SetValuePost(x_values, fval, current_node)
             end
             numvalued[k] = chdset
@@ -273,19 +282,19 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
             n_children = length(children_idx)
             result = true
             for r in 1:n_children-1
-                ix1 = children_arr[children_idx[r]]
-                ix2 = children_arr[children_idx[r+1]]
-                isnum1 = numvalued[ix1]
-                isnum2 = numvalued[ix2]
+                @inbounds ix1 = children_arr[children_idx[r]]
+                @inbounds ix2 = children_arr[children_idx[r+1]]
+                @inbounds isnum1 = numvalued[ix1]
+                @inbounds isnum2 = numvalued[ix2]
                 if isnum1
-                    cval_lhs = numberstorage[ix1]
+                    @inbounds cval_lhs = numberstorage[ix1]
                 else
-                    cval_lhs = setstorage[ix1]
+                    @inbounds cval_lhs = setstorage[ix1]
                 end
                 if isnum2
-                    cval_rhs = numberstorage[ix2]
+                    @inbounds cval_rhs = numberstorage[ix2]
                 else
-                    cval_rhs = setstorage[ix2]
+                    @inbounds cval_rhs = setstorage[ix2]
                 end
                 if op == 1
                     result &= cval_lhs <= cval_rhs
@@ -305,8 +314,8 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
             @inbounds children_idx = nzrange(adj,k)
             ix1 = children_arr[first(children_idx)]
             ix2 = children_arr[last(children_idx)]
-            isnum1 = numvalued[ix1]
-            isnum2 = numvalued[ix2]
+            @inbounds isnum1 = numvalued[ix1]
+            @inbounds isnum2 = numvalued[ix2]
             if isnum1
                 cval_lhs = (numberstorage[ix1] == 1)
             else
@@ -326,8 +335,11 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
             error("Unrecognized node type $(nod.nodetype).")
         end
     end
-
-    return storage[1]
+    if numvalued[1]
+        return numberstorage[1]
+    else
+        return setstorage[1]
+    end
 end
 
 function forward_eval_all(d::Evaluator,x)
@@ -336,7 +348,7 @@ function forward_eval_all(d::Evaluator,x)
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
-        subexpr_values[k] = forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+        subexpr_values[k] = forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                                          ex.nd, ex.adj, ex.const_values,
                                          d.parameter_values, d.current_node,
                                          x, subexpr_values, user_input_buffer,
@@ -344,14 +356,14 @@ function forward_eval_all(d::Evaluator,x)
     end
     if d.has_nlobj
         ex = d.objective
-        forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+        forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                      ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x, subexpr_values, user_input_buffer,
                      user_operators=user_operators)
     end
     for ex in d.constraints
-        forward_eval(ex.setstorage, ex.numberstorage, ex.setvalued,
+        forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                      ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
                      x,subexpr_values, user_input_buffer,
@@ -359,38 +371,40 @@ function forward_eval_all(d::Evaluator,x)
     end
 end
 
-function reverse_eval(reverse_storage::Vector{T},
+function reverse_eval(setstorage::Vector{T}, numberstorage, numvalued,
                       nd::Vector{JuMP.NodeData}, adj) where T
 
-    @assert length(reverse_storage) >= length(nd)
-    @assert length(partials_storage) >= length(nd)
-
-    reverse_storage[1] = one(T)
-
+    @assert length(setstorage) >= length(nd)
+    @assert length(numberstorage) >= length(nd)
+    @assert length(numvalued) >= length(nd)
+#=
     for k in 2:length(nd)
         @inbounds nod = nd[k]
         if nod.nodetype == VALUE || nod.nodetype == LOGIC || nod.nodetype == COMPARISON || nod.nodetype == PARAMETER
             continue
         end
-        @inbounds rev_parent = reverse_storage[nod.parent]
-        @inbounds reverse_storage[k] = ifelse(rev_parent == 0.0, rev_parent, rev_parent*partial)
+        @inbounds isnum = numvalued[k]
+        if ~isnum
+            @inbounds rev_parent = setstorage[nod.parent]
+            @inbounds SetValueReverse(rev_parent,reverse_storage[k])
+        end
     end
-
-    nothing
+=#
+    return nothing
 end
 
 # looks good
 function reverse_eval_all(d::Evaluator,x)
     for k in d.subexpression_order
         ex = d.subexpressions[k]
-        reverse_eval(ex.reverse_storage, ex.nd, ex.adj)
+        reverse_eval(ex.setstorage, ex.numberstorage, ex.numvalued, ex.nd, ex.adj)
     end
     if d.has_nlobj
         ex = d.objective
-        reverse_eval(ex.reverse_storage, ex.nd, ex.adj)
+        reverse_eval(ex.setstorage, ex.numberstorage, ex.numvalued, ex.nd, ex.adj)
     end
     for ex in d.constraints
-        reverse_eval(ex.reverse_storage, ex.nd, ex.adj)
+        reverse_eval(ex.setstorage, ex.numberstorage, ex.numvalued, ex.nd, ex.adj)
     end
     copyto!(d.last_x,x)
 end

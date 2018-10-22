@@ -14,12 +14,15 @@ using DiffRules
 using Reexport
 using StaticArrays
 using IntervalArithmetic
+using Calculus
 
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 
 include("McCormick/McCormick.jl")
 using .McCormick
+
+import Base.eltype
 
 include("Optimizer/IpoptSupplement.jl")
 include("Optimizer/MathOptInterfaceEAGO.jl")

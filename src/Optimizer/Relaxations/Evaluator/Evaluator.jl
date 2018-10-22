@@ -78,6 +78,7 @@ end
 
 eltype(x::Evaluator{T}) where T  = T
 
+include("Univariate.jl")
 include("Passes.jl")
 include("GetInfo.jl")
 include("Load.jl")

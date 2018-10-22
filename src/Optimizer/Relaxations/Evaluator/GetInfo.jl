@@ -4,7 +4,11 @@ function MOI.eval_objective(d::Evaluator, x)
         forward_reverse_pass(d,x)
         val = zero(eltype(x))
         if d.has_nlobj
-            val = d.objective.storage[1].cv
+            if d.objective.numvalued[1]
+                val = d.objective.numberstorage[1]
+            else
+                val = d.objective.setstorage[1].cv
+            end
         else
             error("No nonlinar objective.")
         end
@@ -17,7 +21,11 @@ function MOI.eval_constraint(d::Evaluator, g, x)
     d.eval_constraint_timer += @elapsed begin
         forward_reverse_pass(d,x)
         for i in 1:length(d.constraints)
-            g[i] = d.constraints[i].forward_storage[1].cv
+            if d.constraints[i].numvalued[1]
+                g[i] = d.constraints[i].numberstorage[1]
+            else
+                g[i] = d.constraints[i].setstorage[1].cv
+            end
         end
     end
     return
@@ -29,12 +37,14 @@ function MOI.eval_objective_gradient(d::Evaluator, df, x)
         forward_reverse_pass(d,x)
         val = zero(eltype(x))
         if d.has_nlobj
-            val = d.objective.forward_storage[1].cv_grad
+            if ~d.objective.numvalued[1]
+                val = d.objective.setstorage[1].cv_grad
+            end
         else
             error("No nonlinar objective.")
         end
     end
-    return val
+    return Array(val)
 end
 
 # looks good
@@ -72,13 +82,15 @@ function _hessian_lagrangian_structure(d::Evaluator)
 end
 
 # looks good
-function MOI.eval_constraint_jacobian(d::Evaluator)
+function MOI.eval_constraint_jacobian(d::Evaluator,g,x)
     d.eval_constraint_jacobian_timer += @elapsed begin
         forward_reverse_pass(d,x)
-        t = typeof(d.constraints[i].forward_storage[1])
-        g = zeros(t,length(d.constraints[i].forward_storage[1].cv_grad),length(d.constraints))
+        t = typeof(d.constraints[1].setstorage[1])
+        g = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
         for i in 1:length(d.constraints)
-            g[:,i] = d.constraints[i].forward_storage[1].cv_grad
+            if ~d.constraints[i].numvalued[1]
+                g[:,i] = d.constraints[i].setstorage[1].cv_grad
+            end
         end
     end
     return
@@ -89,10 +101,12 @@ function MOI.eval_constraint_jacobian_product(d::Evaluator, y, x, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
             forward_reverse_pass(d,x)
-            t = typeof(d.constraints[i].forward_storage[1])
-            g = zeros(t,length(d.constraints[i].forward_storage[1].cv_grad),length(d.constraints))
+            t = typeof(d.constraints[1].setstorage[1])
+            y = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
             for i in 1:length(d.constraints)
-                y[i] = d.constraints[i].forward_storage[1].cv_grad*w
+                if ~d.constraints[i].numvalued[1]
+                    y[i] = d.constraints[i].setstorage[1].cv_grad*w
+                end
             end
         end
     else
@@ -106,11 +120,13 @@ function MOI.eval_constraint_jacobian_transpose_product(d::Evaluator, y, x, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
             forward_reverse_pass(d,x)
-            t = typeof(d.constraints[i].forward_storage[1])
+            t = typeof(d.constraints[1].setstorage[1])
             y = zero(y)
             for i in 1:length(d.constraints)
-                for j in 1:d.variable_number
-                    y[i] += d.constraints[i].forward_storage[1].cv_grad[i]*w[j]
+                if ~d.constraints[i].numvalued[1]
+                    for j in 1:d.variable_number
+                        y[i] += d.constraints[i].setstorage[1].cv_grad[i]*w[j]
+                    end
                 end
             end
         end
@@ -131,10 +147,12 @@ function MOI.eval_hessian_lagrangian(d::Evaluator, H, x, σ, μ)
     if (!d.disable_2ndorder)
         d.eval_hessian_lagrangian_timer += @elapsed begin
             forward_reverse_pass(d,x)
-            t = typeof(d.constraints[i].forward_storage[1])
-            H[:,:] =  σ*d.objective.storage[1].cv_hess
+            t = typeof(d.constraints[i].setstorage[1])
+            H[:,:] =  σ*d.objective.setstorage[1].cv_hess
             for i in 1:length(d.constraints)
-                H[:,:] += μ[i]*d.constraints[i].forward_storage[1].cv_hess
+                if ~d.constraints[i].numvalued[1]
+                    H[:,:] += μ[i]*d.constraints[i].setstorage[1].cv_hess
+                end
             end
         end
     end
