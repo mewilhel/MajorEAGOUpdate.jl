@@ -23,6 +23,7 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
     d = Evaluator{S}(src.m)
 
     num_variables_ = JuMP.num_variables(d.m)
+    d.variable_number = num_variables_
     nldata::JuMP.NLPData = d.m.nlp_data
 
     # Copy state of user-defined multivariable functions
@@ -35,7 +36,16 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
     d.disable_2ndorder = !in(:cv_hess,fieldnames(eltype(d)))
 
     # Add objective functions, constraints, subexpressions
+    c1 = d.has_nlobj
+    println("c1: $c1")
+    c2 = d.objective
+    println("c2: $c2")
+    c3 = src.objective
+    println("c3: $c3")
+
     d.has_nlobj = isa(nldata.nlobj, JuMP.NonlinearExprData)
+    c1 = d.has_nlobj
+    println("c1: $c1")
     d.objective = copy_to_function(S,src.objective)
 
 

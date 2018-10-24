@@ -105,7 +105,9 @@ function MOI.eval_constraint_jacobian_product(d::Evaluator, y, x, w)
             y = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
             for i in 1:length(d.constraints)
                 if ~d.constraints[i].numvalued[1]
-                    y[i] = d.constraints[i].setstorage[1].cv_grad*w
+                    for j in 1:d.variable_number
+                        y[i] += d.constraints[i].setstorage[1].cv_grad[j]*w[j]
+                    end
                 end
             end
         end
@@ -121,11 +123,11 @@ function MOI.eval_constraint_jacobian_transpose_product(d::Evaluator, y, x, w)
         d.eval_constraint_jacobian_timer += @elapsed begin
             forward_reverse_pass(d,x)
             t = typeof(d.constraints[1].setstorage[1])
-            y = zero(y)
+            y = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
             for i in 1:length(d.constraints)
                 if ~d.constraints[i].numvalued[1]
                     for j in 1:d.variable_number
-                        y[i] += d.constraints[i].setstorage[1].cv_grad[i]*w[j]
+                        y[i] += d.constraints[i].setstorage[1].cv_grad[j]*w[j]
                     end
                 end
             end

@@ -23,30 +23,24 @@ function MOI.optimize!(m::Optimizer)
             push!(m.OBBTVars,MOI.VariableIndex(i))
         end
     end
-    SetObjectiveCut!(m::Optimizer)
-    #ClassifyQuadratics!(m)
-
-    # Sets up relaxations terms that don't vary during iterations (mainly linear)
-    RelaxModel!(m.InitialRelaxedOptimizer, m.Relaxation, load = true)
-
-
-    # Sets upper bounding problem using terms specified in optimizer
-    SetLocalNLP!(m)
-
-    m.InitialRelaxedOptimizer = deepcopy(m.WorkingUpperOptimizer)
-    m.WorkingRelaxedOptimizer = deepcopy(m.WorkingUpperOptimizer)
-
-    # Add objective cut constraint to relaxation (set to unbounded for relaxation, fixed for OBBT)
-    SetObjectiveCut!(m)
 
     # Sets any unset functions to default values
     SetToDefault!(m)
 
+    # Copies variables to subproblems
+    PushVariables!(m)
+
     # Create initial node and add it to the stack
     CreateInitialNode!(m)
 
-    # Just solves things locally
-    m.Preprocess(m,m.stack[1])
+    # Sets up relaxations terms that don't vary during iterations (mainly linear)
+    RelaxModel!(m, m.InitialRelaxedOptimizer, m.Stack[1], m.Relaxation, load = true)
+
+    # Sets upper bounding problem using terms specified in optimizer
+    SetLocalNLP!(m)
+
+    # Tests Initial Routines
+    m.Preprocess(m,m.Stack[1])
     #feas1 = PoorManLP(m,m.Stack[1])
     #feas2 = OBBT(m,m.Stack[1])
     #m.UpperProblem(m,m.Stack[1])

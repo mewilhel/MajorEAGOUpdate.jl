@@ -72,3 +72,7 @@ end
 function ReverseDict(dict)
     Dict(value => key for (key, value) in dict)
 end
+
+function MOI.copy_to(model::Optimizer, src::MOI.ModelLike; copy_names = false)
+    return MOI.Utilities.default_copy_to(model, src, copy_names)
+end

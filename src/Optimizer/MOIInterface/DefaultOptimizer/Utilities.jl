@@ -83,11 +83,50 @@ function SetToDefault!(m::Optimizer)
     (m.BisectionFunction == DummyFunction)  &&   (m.BisectionFunction = ContinuousRelativeBisect)
     (m.CutCondition == DummyFunction)       &&   (m.CutCondition = DefaultCutCondition)
     (m.AddCut == DummyFunction)             &&   (m.AddCut = DefaultAddCut)
+    (typeof(m.InitialRelaxedOptimizer) == DummyOptimizer) && (m.InitialRelaxedOptimizer = Clp.Optimizer())
+    (typeof(m.WorkingRelaxedOptimizer) == DummyOptimizer) && (m.WorkingRelaxedOptimizer = Clp.Optimizer())
+    (typeof(m.InitialUpperOptimizer) == DummyOptimizer) && (m.InitialUpperOptimizer = Ipopt.Optimizer())
+    (typeof(m.WorkingUpperOptimizer) == DummyOptimizer) && (m.WorkingUpperOptimizer = Ipopt.Optimizer())
 end
 
 function CreateInitialNode!(m::Optimizer)
     LowerVars = LowerBound.(m.VariableInfo)
     UpperVars = UpperBound.(m.VariableInfo)
-    m.Stack[1] = NodeData(LowerVars,UpperVars,-Inf,Inf,0)
+    m.Stack[1] = NodeBB()
+    m.Stack[1].LowerVar = LowerVars
+    m.Stack[1].UpperVar = UpperVars
     m.MaximumNodeID += 1
+end
+
+function PushVariableBounds!(var::VariableInfo,var_xi,m)
+    if var.is_integer
+    else
+        if var.is_fixed
+            MOI.add_constraint(m, var_xi, MOI.EqualTo(var.upper_bound))
+        elseif var.has_lower_bound
+            if var.has_upper_bound
+                MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
+                MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+            else
+                MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+            end
+        elseif var.has_upper_bound
+            MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
+        end
+    end
+end
+
+function PushVariables!(m::Optimizer)
+    # Copies the same variables to every submodel
+    MOI.add_variables(m.InitialRelaxedOptimizer, m.VariableNumber)
+    MOI.add_variables(m.WorkingRelaxedOptimizer, m.VariableNumber)
+    MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
+    x = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
+    for (i,var) in enumerate(m.VariableInfo)
+        var_xi = MOI.SingleVariable(x[i])
+        PushVariableBounds!(var, var_xi, m.InitialRelaxedOptimizer)
+        PushVariableBounds!(var, var_xi, m.WorkingRelaxedOptimizer)
+        PushVariableBounds!(var, var_xi, m.InitialUpperOptimizer)
+        PushVariableBounds!(var, var_xi, m.WorkingUpperOptimizer)
+    end
 end

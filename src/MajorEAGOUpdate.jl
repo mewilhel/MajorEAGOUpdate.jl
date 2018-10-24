@@ -10,6 +10,7 @@ using JuMP
 using JuMP.Derivatives
 
 using Ipopt
+using Clp
 using DiffRules
 using Reexport
 using StaticArrays

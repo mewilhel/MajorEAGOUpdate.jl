@@ -46,6 +46,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     Stack::Dict{Int,NodeBB}                       # Map of Node ID to NodeData
 
     NLPData::MOI.NLPBlockData
+    WorkingEvaluator::MOI.NLPBlockData
     VariableNumber::Int
     ContinuousNumber::Int
     IntegerNumber::Int
@@ -192,7 +193,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.InitialContinuousValues = IntervalBox(Interval(0.0))      # Interval box constraints
         m.InitialIntegerValues = Vector{Int}[]                      # Potential Integer Values
         m.NLPData = empty_nlp_data()
-
+        m.WorkingEvaluator = empty_nlp_data()
+         
         m.ConstraintConvexity = Dict{MOI.ConstraintIndex,Bool}()
         m.VItoSto = Dict{Int,Int}()
         m.StoToVI = Dict{Int,Int}()
@@ -327,5 +329,3 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     end
 
 end
-
-MOI.copy!(m::Optimizer, src::MOI.ModelLike; copynames = false) = MOI.Utilities.defaultcopy!(m, src, copynames)

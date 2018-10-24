@@ -12,6 +12,10 @@ mutable struct FunctionSetStorage{T}
     dependent_subexpressions::Vector{Int}
 end
 
+FunctionSetStorage(T) = FunctionSetStorage(JuMP.NodeData[],SparseMatrixCSC{Bool,Int}(0,0,Int[],Int[],Int[]),
+                                           Float64[],T[],Float64[],
+                                           Bool[],Int[],Int[],Int[],Int[])
+
 mutable struct SubexpressionSetStorage{T}
     nd::Vector{JuMP.NodeData}
     adj::SparseMatrixCSC{Bool,Int}
@@ -55,7 +59,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     subexpression_values::Vector{T}
     subexpression_linearity::Vector{JuMP.Derivatives.Linearity}
     subexpressions_as_julia_expressions::Vector{Any}
-    last_x::Vector{T}
+    last_x::Vector{Float64}
     jac_storage::Vector{T}
     user_output_buffer::Vector{T}
     eval_objective_timer::Float64
@@ -67,6 +71,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
         d = new()
         d.m = m
         d.constraints = FunctionSetStorage[]
+        d.objective = FunctionSetStorage{T}()
         d.eval_objective_timer = 0.0
         d.eval_constraint_timer = 0.0
         d.eval_objective_gradient_timer = 0.0
