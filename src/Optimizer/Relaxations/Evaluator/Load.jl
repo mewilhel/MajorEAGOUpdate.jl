@@ -1,5 +1,4 @@
 function copy_to_function(T::S,x::JuMP.FunctionStorage) where {S<:DataType}
-    println("T: $T")
     temp_set = Array{T}(undef,length(x.nd))
     temp_flt = Array{Float64}(undef,length(x.nd))
     temp_bool = Array{Bool}(undef,length(x.nd))
@@ -8,7 +7,6 @@ function copy_to_function(T::S,x::JuMP.FunctionStorage) where {S<:DataType}
 end
 
 function copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType}
-    println("T: $T")
     temp_set = Array{T}(undef,length(x.nd))
     temp_flt = Array{Float64}(undef,length(x.nd))
     temp_bool = Array{Bool}(undef,length(x.nd))
@@ -37,17 +35,13 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
 
     # Add objective functions, constraints, subexpressions
     c1 = d.has_nlobj
-    println("c1: $c1")
     c2 = d.objective
-    println("c2: $c2")
     c3 = src.objective
-    println("c3: $c3")
 
     d.has_nlobj = isa(nldata.nlobj, JuMP.NonlinearExprData)
     c1 = d.has_nlobj
-    println("c1: $c1")
+    copied_func = copy_to_function(S,src.objective)
     d.objective = copy_to_function(S,src.objective)
-
 
     for i in 1:length(src.constraints)
         push!(d.constraints,copy_to_function(S,src.constraints[i]))

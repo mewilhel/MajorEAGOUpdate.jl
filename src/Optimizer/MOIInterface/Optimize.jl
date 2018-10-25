@@ -24,6 +24,9 @@ function MOI.optimize!(m::Optimizer)
         end
     end
 
+    # Get various other sizes
+    num_nlp_constraints = length(m.NLPData.constraint_bounds)
+
     # Sets any unset functions to default values
     SetToDefault!(m)
 
@@ -32,6 +35,15 @@ function MOI.optimize!(m::Optimizer)
 
     # Create initial node and add it to the stack
     CreateInitialNode!(m)
+
+    # Build the JuMP NLP evaluator
+    evaluator = m.NLPData.evaluator
+    features = MOI.features_available(evaluator)
+    has_hessian = (:Hess in features)
+    init_feat = [:Grad]
+    has_hessian && push!(init_feat, :Hess)
+    num_nlp_constraints > 0 && push!(init_feat, :Jac)
+    MOI.initialize(evaluator,init_feat)
 
     # Sets up relaxations terms that don't vary during iterations (mainly linear)
     RelaxModel!(m, m.InitialRelaxedOptimizer, m.Stack[1], m.Relaxation, load = true)

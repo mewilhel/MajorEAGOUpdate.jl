@@ -12,7 +12,7 @@ mutable struct FunctionSetStorage{T}
     dependent_subexpressions::Vector{Int}
 end
 
-FunctionSetStorage(T) = FunctionSetStorage(JuMP.NodeData[],SparseMatrixCSC{Bool,Int}(0,0,Int[],Int[],Int[]),
+FunctionSetStorage(T) = FunctionSetStorage{T}(JuMP.NodeData[],spzeros(Bool,1),
                                            Float64[],T[],Float64[],
                                            Bool[],Int[],Int[],Int[],Int[])
 
@@ -71,7 +71,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
         d = new()
         d.m = m
         d.constraints = FunctionSetStorage[]
-        d.objective = FunctionSetStorage{T}()
+        d.objective = FunctionSetStorage(T)
         d.eval_objective_timer = 0.0
         d.eval_constraint_timer = 0.0
         d.eval_objective_gradient_timer = 0.0

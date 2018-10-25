@@ -46,7 +46,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     Stack::Dict{Int,NodeBB}                       # Map of Node ID to NodeData
 
     NLPData::MOI.NLPBlockData
-    WorkingEvaluator::MOI.NLPBlockData
+    WorkingEvaluatorBlock::MOI.NLPBlockData
     VariableNumber::Int
     ContinuousNumber::Int
     IntegerNumber::Int
@@ -193,8 +193,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.InitialContinuousValues = IntervalBox(Interval(0.0))      # Interval box constraints
         m.InitialIntegerValues = Vector{Int}[]                      # Potential Integer Values
         m.NLPData = empty_nlp_data()
-        m.WorkingEvaluator = empty_nlp_data()
-         
+        m.WorkingEvaluatorBlock = empty_nlp_data()
+
         m.ConstraintConvexity = Dict{MOI.ConstraintIndex,Bool}()
         m.VItoSto = Dict{Int,Int}()
         m.StoToVI = Dict{Int,Int}()
@@ -226,7 +226,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.BiQuadraticGEQConstraints = Tuple{Float64,Float64,Float64,Float64,Float64,Float64,Int,Int}[]
         m.BiQuadraticEQConstraints = Tuple{Float64,Float64,Float64,Float64,Float64,Float64,Int,Int}[]
 
-
         m.LowerProblem = DummyFunction                         # Stores lower problem function
         m.UpperProblem = DummyFunction                         # Stores upper problem function
         m.Preprocess = DummyFunction                           # Preprocessing function
@@ -248,6 +247,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.CurrentUpperInfo = UpperInfo()
         m.CurrentPreprocessInfo = PreprocessInfo()
         m.CurrentPostprocessInfo = PostprocessInfo()
+
+        m.Objective = nothing
 
         m.LPOptimizer = DummyOptimizer()
         m.MILPOptimizer = DummyOptimizer()

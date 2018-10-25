@@ -15,7 +15,7 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @constraint(m, y >= 0)
 
 @NLconstraint(m, log(y - x ^ 2) <= 0)
-
+backend = m.moi_backend
 JuMP.optimize!(m)
 
 println("Objective value: ", JuMP.objective_value(m))

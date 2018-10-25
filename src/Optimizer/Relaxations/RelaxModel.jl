@@ -7,15 +7,15 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
         # add linear terms to model
         RelaxLinear!(src,trg)
         # build NLP evaluator and save to EAGO object
-        a = src.VariableNumber
-        println("a: $a")
-        b = src.NLPData
-        println("b: $b")
-        src.WorkingEvaluator = Build_NLP_Evaluator(MC{src.VariableNumber},src.NLPData.evaluator,src)
+        src.WorkingEvaluatorBlock = src.NLPData
+        Built_Evaluator = Build_NLP_Evaluator(MC{src.VariableNumber},src.NLPData.evaluator,src)
+        src.WorkingEvaluatorBlock = MOI.NLPBlockData(src.NLPData.constraint_bounds,
+                                                Built_Evaluator,
+                                                src.NLPData.has_objective)
         # copy working evaluator into block if nonlinear block is needed
         if (r.OptimizerType == :NLP || r.OptimizerType == :MINLP)
             if ~isempty(src.NonlinearVariable)
-                trg.nlp_data.evaluator = src.WorkingEvaluator
+                trg.nlp_data = src.WorkingEvaluatorBlock
             end
         end
     else
