@@ -8,11 +8,37 @@ end
 function Update_VariableBounds_Upper!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
     # Updates variables bounds
     for i=1:x.VariableNumber
-        if (~x.VariableInfo[i].is_integer)
-            MOI.set(z, MOI.ConstraintSet(), x.VariableIndex[i], MOI.Interval(y.LowerVar[i],y.UpperVar[i]))
+        var = x.VariableInfo[i]
+        if (~var.is_integer)
+            if var.is_fixed
+                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.EqualTo(var.upper_bound))
+            elseif var.has_lower_bound
+                if var.has_upper_bound
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound))
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.GreaterThan(var.lower_bound))
+                else
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.GreaterThan(var.lower_bound))
+                end
+            elseif var.has_upper_bound
+                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound))
+            end
         else
+            #=
             MOI.set(z, MOI.ConstraintSet(), x.VariableIndex[i], MOI.Interval(x.CurrentLowerInfo.Solution[i],
                                                                              x.CurrentLowerInfo.Solution[i]))
+            if var.is_fixed
+                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.EqualTo(var.upper_bound))
+            elseif var.has_lower_bound
+                if var.has_upper_bound
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound))
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.GreaterThan(var.lower_bound))
+                else
+                    MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.GreaterThan(var.lower_bound))
+                end
+            elseif var.has_upper_bound
+                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound)
+            end
+            =#
         end
     end
 end

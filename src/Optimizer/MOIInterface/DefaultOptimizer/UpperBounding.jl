@@ -2,7 +2,8 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
     if is_integer_feasible(x)
         # Copies initial model into working model (if initial model isn't dummy)
         if x.InitialUpperOptimizer != DummyOptimizer()
-            MOI.copy!(x.InitialUpperOptimizer,x.WorkingUpperOptimizer)
+            #MOI.copy_to(x.WorkingUpperOptimizer,x.InitialUpperOptimizer)
+            x.WorkingUpperOptimizer = deepcopy(x.InitialUpperOptimizer)
         end
 
         # Updates variables bounds
@@ -23,6 +24,10 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
             end
             x.CurrentUpperInfo.Feasibility = true
             x.CurrentUpperInfo.Value = objvalue
+            temp1 = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
+            temp2 = x.CurrentUpperInfo.Solution[1:end]
+            println("temp1: $temp1")
+            println("temp2: $temp2")
             x.CurrentUpperInfo.Solution[1:end] = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
         else
             x.CurrentUpperInfo.Feasibility = false

@@ -23,6 +23,7 @@ export Optimizer
 mutable struct Optimizer <: MOI.AbstractOptimizer
 
     InputModel::Any
+    IntegerVar::Vector{Int}
     VariableInfo::Vector{VariableInfo}
     UpperVariables::Vector{MOI.VariableIndex}
     VariableIndex::Vector{MOI.ConstraintIndex}
@@ -186,6 +187,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m = new()
 
         m.InputModel = 0
+        m.IntegerVar = Int[]
         m.VariableInfo = VariableInfo[]
         m.UpperVariables = MOI.VariableIndex[]
         m.VariableIndex = MOI.ConstraintIndex[]
