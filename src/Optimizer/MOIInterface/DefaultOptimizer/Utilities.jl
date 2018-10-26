@@ -1,15 +1,26 @@
 function Update_VariableBounds_Lower!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
-    # Updates variables bounds
-    for i=1:x.VariableNumber
-        MOI.set(z, MOI.ConstraintSet(), x.VariableIndex[i], MOI.Interval(y.LowerVar[i],y.UpperVar[i]))
-    end
-end
 
-function Update_VariableBounds_Upper!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
     # Updates variables bounds
     for i=1:x.VariableNumber
         var = x.VariableInfo[i]
         if (~var.is_integer)
+            ci1,ci2,num = x.VariableIndex[i]
+            if var.is_fixed
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.EqualTo(var.upper_bound))
+            elseif var.has_lower_bound
+                if var.has_upper_bound
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan(var.upper_bound))
+                    MOI.set(z, MOI.ConstraintSet(), ci2, MOI.GreaterThan(var.lower_bound))
+                else
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.GreaterThan(var.lower_bound))
+                end
+            elseif var.has_upper_bound
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan(var.upper_bound))
+            end
+        else
+            #=
+            MOI.set(z, MOI.ConstraintSet(), x.VariableIndex[i], MOI.Interval(x.CurrentLowerInfo.Solution[i],
+                                                                             x.CurrentLowerInfo.Solution[i]))
             if var.is_fixed
                 MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.EqualTo(var.upper_bound))
             elseif var.has_lower_bound
@@ -20,7 +31,30 @@ function Update_VariableBounds_Upper!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI
                     MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.GreaterThan(var.lower_bound))
                 end
             elseif var.has_upper_bound
-                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound))
+                MOI.set(z, MOI.ConstraintSet(), MOI.VariableIndex(x.VariableNumber), MOI.LessThan(var.upper_bound)
+            end
+            =#
+        end
+    end
+end
+
+function Update_VariableBounds_Upper!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
+    # Updates variables bounds
+    for i=1:x.VariableNumber
+        var = x.VariableInfo[i]
+        if (~var.is_integer)
+            ci1,ci2,num = x.VariableIndex[i]
+            if var.is_fixed
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.EqualTo(var.upper_bound))
+            elseif var.has_lower_bound
+                if var.has_upper_bound
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan(var.upper_bound))
+                    MOI.set(z, MOI.ConstraintSet(), ci2, MOI.GreaterThan(var.lower_bound))
+                else
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.GreaterThan(var.lower_bound))
+                end
+            elseif var.has_upper_bound
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan(var.upper_bound))
             end
         else
             #=
@@ -59,8 +93,6 @@ function SetLocalNLP!(m::Optimizer)
          MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearGEQConstraints
-        println("func: $func")
-        println("set: $set")
         MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearEQConstraints
@@ -81,6 +113,9 @@ function SetLocalNLP!(m::Optimizer)
 
     # Add objective sense
     MOI.set(m.WorkingUpperOptimizer, MOI.ObjectiveSense(), m.OptimizationSense)
+
+    # Specifies variables in upper problem
+    m.UpperVariables = MOI.VariableIndex.(1:m.VariableNumber)
 
     # Add objective function (if any)
     if (m.Objective != nothing)
@@ -131,16 +166,20 @@ function PushVariableBounds!(var::VariableInfo,var_xi,m)
     if var.is_integer
     else
         if var.is_fixed
-            MOI.add_constraint(m, var_xi, MOI.EqualTo(var.upper_bound))
+            ci1 = MOI.add_constraint(m, var_xi, MOI.EqualTo(var.upper_bound))
+            return ci1,ci1,1
         elseif var.has_lower_bound
             if var.has_upper_bound
-                MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
-                MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+                ci1 = MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
+                ci2 = MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+                return ci1,ci2,2
             else
-                MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+                ci1 = MOI.add_constraint(m, var_xi, MOI.GreaterThan(var.lower_bound))
+                return ci1,ci1,1
             end
         elseif var.has_upper_bound
-            MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
+            ci1 = MOI.add_constraint(m, var_xi, MOI.LessThan(var.upper_bound))
+            return ci1,ci1,1
         end
     end
 end
@@ -154,8 +193,9 @@ function PushVariables!(m::Optimizer)
     for (i,var) in enumerate(m.VariableInfo)
         var_xi = MOI.SingleVariable(x[i])
         PushVariableBounds!(var, var_xi, m.InitialRelaxedOptimizer)
-        PushVariableBounds!(var, var_xi, m.WorkingRelaxedOptimizer)
+        VarTuple = PushVariableBounds!(var, var_xi, m.WorkingRelaxedOptimizer)
         PushVariableBounds!(var, var_xi, m.InitialUpperOptimizer)
         PushVariableBounds!(var, var_xi, m.WorkingUpperOptimizer)
+        push!(m.VariableIndex,VarTuple)
     end
 end

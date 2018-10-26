@@ -11,5 +11,5 @@ function RelaxLinear!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
 end
 
 # Relaxes nonlinear term via MidPoint Affine calculation
-function MidPointAffine!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
+function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
 end

@@ -32,6 +32,9 @@ MOI.get(m::Optimizer, ::MOI.NodeCount) = length(m.MaximumNodeID)
 
 function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableIndex)
     check_inbounds(model, vi)
-    @assert length(model.ContinuousSolution) >= vi.value
+    println("vi.value: $(vi.value)")
+    println("model.VariableNumber: $(model.VariableNumber)")
+    println("length(model.ContinuousSolution): $(length(model.ContinuousSolution))")
+    @assert length(model.ContinuousSolution) < vi.value
     return model.ContinuousSolution[vi.value]
 end

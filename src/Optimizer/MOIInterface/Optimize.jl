@@ -5,6 +5,7 @@ function MOI.optimize!(m::Optimizer)
     #NewVariableSize,NewVariableIndex = ProcessDAG!(m)
     NewVariableSize = length(m.VariableInfo)
     m.ContinuousNumber = NewVariableSize
+    m.VariableNumber = NewVariableSize
 
     ########### Set Correct Size for Problem Storage #########
     m.CurrentLowerInfo.Solution = Float64[0.0 for i=1:NewVariableSize]
@@ -14,7 +15,10 @@ function MOI.optimize!(m::Optimizer)
 
     # loads variables into the working model
     m.VItoSto = Dict{Int,Int}()
-    for i=1:NewVariableSize m.VItoSto[i] = i end
+    for i=1:NewVariableSize
+        m.VItoSto[i] = i
+    end
+    m.StoToVI = ReverseDict(m.VItoSto)
 
     ###### OBBT Setup #####
     # Sets terms that OBBT will be performed on
@@ -46,6 +50,7 @@ function MOI.optimize!(m::Optimizer)
     MOI.initialize(evaluator,init_feat)
 
     # Sets up relaxations terms that don't vary during iterations (mainly linear)
+    m.LowerVariables = MOI.VariableIndex.(1:m.VariableNumber)
     RelaxModel!(m, m.InitialRelaxedOptimizer, m.Stack[1], m.Relaxation, load = true)
 
     # Sets upper bounding problem using terms specified in optimizer
@@ -55,6 +60,7 @@ function MOI.optimize!(m::Optimizer)
     #m.Preprocess(m,m.Stack[1])
     #feas1 = PoorManLP(m,m.Stack[1])
     #feas2 = OBBT(m,m.Stack[1])
+    m.LowerProblem(m,m.Stack[1])
     m.UpperProblem(m,m.Stack[1])
     m.Postprocess(m,m.Stack[1])
 

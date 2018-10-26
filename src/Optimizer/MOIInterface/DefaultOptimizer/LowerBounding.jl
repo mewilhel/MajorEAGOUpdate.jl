@@ -3,12 +3,13 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     # Copies initial model into working model (if initial model isn't dummy)
     # A dummy model is left iff all terms are relaxed
     if x.InitialRelaxedOptimizer != DummyOptimizer()
-        MOI.copy!(x.InitialRelaxedOptimizer,x.WorkingRelaxedOptimizer)
+        #MOI.copy_to(x.WorkingRelaxedOptimizer,x.InitialRelaxedOptimizer)
+        x.WorkingRelaxedOptimizer = deepcopy(x.InitialRelaxedOptimizer)
     end
 
     Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
 
-    RelaxModel!(x,y,x.WorkingRelaxedOptimizer)
+    RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
 
     MOI.optimize!(x.WorkingRelaxedOptimizer)
 

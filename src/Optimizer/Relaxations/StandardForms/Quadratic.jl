@@ -36,8 +36,8 @@ function Is_Convex_Quadratic(func::MOI.ScalarQuadraticFunction{Float64},src::Opt
     end
 end
 
-function Relax_Convex_Quadratic_Inner!(trg::T, src::Optimizer, func::MOI.ScalarQuadraticFunction{Float64},
-                                 lower::Float64, upper::Float64, n::NodeBB, x0::Vector{Float64}) where {T<:MOI.AbstractOptimizer}
+function Relax_Convex_Quadratic_Inner!(trg, src::Optimizer, func::MOI.ScalarQuadraticFunction{Float64},
+                                 lower::Float64, upper::Float64, n::NodeBB, x0::Vector{Float64})
 
     VarNum = length(n.LowerVar)
     temp_sto = zeros(Float64,VarNum)
@@ -96,8 +96,8 @@ function Relax_Convex_Quadratic_Inner!(trg::T, src::Optimizer, func::MOI.ScalarQ
     end
 end
 
-function Relax_Nonconvex_Quadratic!(trg::T, src::Optimizer, func::MOI.ScalarQuadraticFunction{Float64},
-                                    lower::Float64, upper::Float64, n::NodeBB, x0::Vector{Float64}) where {T<:MOI.AbstractOptimizer}
+function Relax_Nonconvex_Quadratic!(trg, src::Optimizer, func::MOI.ScalarQuadraticFunction{Float64},
+                                    lower::Float64, upper::Float64, n::NodeBB, x0::Vector{Float64})
     terms_coeff = Float64[]
     terms_index = Int[]
 
@@ -188,7 +188,7 @@ function Relax_Nonconvex_Quadratic!(trg::T, src::Optimizer, func::MOI.ScalarQuad
     end
 end
 
-function RelaxQuadratic!(trg::T, src::Optimizer, n::NodeBB) where {T<:MOI.AbstractOptimizer}
+function RelaxQuadratic!(trg, src::Optimizer, n::NodeBB, r::RelaxationScheme)
     #count = 0
     x0 = (n.UpperVar - n.LowerVar)/2.0
     # Relax Convex Quadratic Terms

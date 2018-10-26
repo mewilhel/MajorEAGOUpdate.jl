@@ -19,10 +19,19 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
             end
         end
     else
-        RelaxQuadratic!(src,trg,n,r,load)
-        RelaxNonlinear!(src,trg,n,r,load)
+        RelaxQuadratic!(trg,src,n,r)
         if ~isempty(src.NonlinearVariable)
-            trg.nlp_data.evaluator.current_node = n
+            if MOI.supports(trg, MOI.NLPBlock())
+                evaluator = src.WorkingEvaluatorBlock.evaluator
+                evaluator.current_node = n
+                nlp_data = MOI.NLPBlockData(src.NLPData.constraint_bounds,
+                                            evaluator,
+                                            src.NLPData.has_objective)
+                MOI.set(trg, MOI.NLPBlock(), nlp_data)
+                RelaxNonlinear!(src,trg,n,r,load)
+            else
+                MidPointAffine!(src,trg,n,r)
+            end
         end
     end
 end

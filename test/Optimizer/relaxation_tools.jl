@@ -130,7 +130,9 @@ EAGO.RelaxQuadratic!(target, model, n)
 
     n = EAGO.NodeBB(Float64[1.0,5.0,8.0], Float64[2.0,6.0,9.0], -Inf, Inf, 2, 1, true)
 
-    EAGO.RelaxQuadratic!(target, model, n)
+    r = EAGO.DefaultRelaxationScheme()
+
+    EAGO.RelaxQuadratic!(target, model, n, r)
 
     @test target.LinearLEQConstraints[1][1].terms[1].coefficient == 5.0
     @test target.LinearLEQConstraints[1][1].terms[1].variable_index.value == 1

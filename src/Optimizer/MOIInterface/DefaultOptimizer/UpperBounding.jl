@@ -10,7 +10,10 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
         Update_VariableBounds_Upper!(x,y,x.WorkingUpperOptimizer)
 
         # Optimizes the object
+        tt = stdout
+        redirect_stdout()
         MOI.optimize!(x.WorkingUpperOptimizer)
+        redirect_stdout(tt)
 
         # Process output info and save to CurrentUpperInfo object
         termination_status = MOI.get(x.WorkingUpperOptimizer, MOI.TerminationStatus())
@@ -26,8 +29,6 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
             x.CurrentUpperInfo.Value = objvalue
             temp1 = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
             temp2 = x.CurrentUpperInfo.Solution[1:end]
-            println("temp1: $temp1")
-            println("temp2: $temp2")
             x.CurrentUpperInfo.Solution[1:end] = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
         else
             x.CurrentUpperInfo.Feasibility = false
