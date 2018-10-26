@@ -6,14 +6,14 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @variable(m, 1 <= x <= 3)
 @variable(m, 1 <= y <= 3)
 
-@NLobjective(m, Min, exp(1 - x) ^ 2 + 100 * (y - x ^ 2) ^ 2)
+@NLobjective(m, Min, exp(x))
 #@NLobjective(m, Min, log(y - x ^ 2))
 #@NLobjective(m, Min, log(x))
 
 @constraint(m, x^2 + y <= 10)
-@constraint(m, x + y == 10)
+@constraint(m, x + y <= 10)
 
-@NLconstraint(m, log(y - x ^ 2) <= 0)
+@NLconstraint(m, y^3 >= 0)
 backend = m.moi_backend
 JuMP.optimize!(m)
 

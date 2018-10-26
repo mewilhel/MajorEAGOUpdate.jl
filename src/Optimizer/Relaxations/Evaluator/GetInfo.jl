@@ -83,16 +83,16 @@ end
 
 # looks good
 function MOI.eval_constraint_jacobian(d::Evaluator,g,x)
-    d.eval_constraint_jacobian_timer += @elapsed begin
+    #d.eval_constraint_jacobian_timer += @elapsed begin
         forward_reverse_pass(d,x)
-        t = typeof(d.constraints[1].setstorage[1])
-        g = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
+        #t = typeof(d.constraints[1].setstorage[1])
+        g = zeros(Float64,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
         for i in 1:length(d.constraints)
             if ~d.constraints[i].numvalued[1]
                 g[:,i] = d.constraints[i].setstorage[1].cv_grad
             end
         end
-    end
+    #end
     return
 end
 
@@ -122,8 +122,8 @@ function MOI.eval_constraint_jacobian_transpose_product(d::Evaluator, y, x, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
             forward_reverse_pass(d,x)
-            t = typeof(d.constraints[1].setstorage[1])
-            y = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
+            #t = typeof(d.constraints[1].setstorage[1])
+            y = zeros(Float64,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
             for i in 1:length(d.constraints)
                 if ~d.constraints[i].numvalued[1]
                     for j in 1:d.variable_number

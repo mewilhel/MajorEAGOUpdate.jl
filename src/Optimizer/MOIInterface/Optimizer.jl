@@ -27,7 +27,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     VariableInfo::Vector{VariableInfo}
     LowerVariables::Vector{MOI.VariableIndex}
     UpperVariables::Vector{MOI.VariableIndex}
-    VariableIndex::Vector{Tuple{MOI.ConstraintIndex,MOI.ConstraintIndex,Int}}
+    VariableIndexLow::Vector{Tuple{MOI.ConstraintIndex,MOI.ConstraintIndex,Int}}
+    VariableIndexUpp::Vector{Tuple{MOI.ConstraintIndex,MOI.ConstraintIndex,Int}}
     ObjConstrIndx::Vector{MOI.ConstraintIndex}
     InitialContinuousValues::IntervalBox            # Interval box constraints
     InitialIntegerValues::Vector{Int}               # Potential Integer Values
@@ -192,7 +193,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.VariableInfo = VariableInfo[]
         m.LowerVariables = MOI.VariableIndex[]
         m.UpperVariables = MOI.VariableIndex[]
-        m.VariableIndex = MOI.ConstraintIndex[]
+        m.VariableIndexLow = Tuple{MOI.ConstraintIndex,MOI.ConstraintIndex,Int}[]
+        m.VariableIndexUpp = Tuple{MOI.ConstraintIndex,MOI.ConstraintIndex,Int}[]
         m.ObjConstrIndx = MOI.ConstraintIndex[]
         m.InitialContinuousValues = IntervalBox(Interval(0.0))      # Interval box constraints
         m.InitialIntegerValues = Vector{Int}[]                      # Potential Integer Values

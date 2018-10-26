@@ -28,7 +28,6 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
                                             evaluator,
                                             src.NLPData.has_objective)
                 MOI.set(trg, MOI.NLPBlock(), nlp_data)
-                RelaxNonlinear!(src,trg,n,r,load)
             else
                 MidPointAffine!(src,trg,n,r)
             end

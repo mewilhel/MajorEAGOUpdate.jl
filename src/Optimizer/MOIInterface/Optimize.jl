@@ -34,8 +34,12 @@ function MOI.optimize!(m::Optimizer)
     # Sets any unset functions to default values
     SetToDefault!(m)
 
-    # Copies variables to subproblems
-    PushVariables!(m)
+    # Copies variables to upper subproblems
+    MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
+    m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
+
+    # Copies variables and bounds to lower subproblems
+    PushLowerVariables!(m)
 
     # Create initial node and add it to the stack
     CreateInitialNode!(m)
@@ -62,7 +66,7 @@ function MOI.optimize!(m::Optimizer)
     #feas2 = OBBT(m,m.Stack[1])
     m.LowerProblem(m,m.Stack[1])
     m.UpperProblem(m,m.Stack[1])
-    m.Postprocess(m,m.Stack[1])
+    #m.Postprocess(m,m.Stack[1])
 
     # Runs the branch and bound routine
     #SolveNLP!(m)
