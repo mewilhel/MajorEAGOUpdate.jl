@@ -1,6 +1,8 @@
 function SetDual!(x::Optimizer)
+    println("started set dual")
     for (vi,VarIndxTuple) in enumerate(x.VariableIndexLow)
         (ci1,ci2,n) = VarIndxTuple
+        println("VarIndxTuple: $VarIndxTuple")
         if (n == 2)
             if isa(ci1,MOI.ConstraintIndex{MOI.SingleVariable,MOI.GreaterThan{Float64}})
                 x.CurrentLowerInfo.LowerVarDual[vi] = MOI.get(x.WorkingRelaxedOptimizer, MOI.ConstraintDual(), ci1)
@@ -53,7 +55,7 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
         x.CurrentLowerInfo.Feasibility = true
         x.CurrentLowerInfo.Value = objvalue
         x.CurrentLowerInfo.Solution[1:end] = MOI.get(x.WorkingRelaxedOptimizer, MOI.VariablePrimal(), x.LowerVariables)
-        #SetDual!(x)
+        SetDual!(x)
     else
         x.CurrentLowerInfo.Feasibility = false
         x.CurrentLowerInfo.Value = Inf
