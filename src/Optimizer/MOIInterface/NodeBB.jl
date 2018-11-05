@@ -50,3 +50,7 @@ NodeHistory() = NodeHistory(0,0,Dict{Int,Float64}(),
                                 Dict{Int,Float64}(),
                                 Dict{Int,Int}(),
                                 Dict{Int,Int}())
+
+function copy(x::NodeBB)
+    return NodeBB(x.LowerVar, x.UpperVar, x.LowerBound, x.UpperBound, x.Depth, x.LastBranch, x.DirBranch)
+end

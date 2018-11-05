@@ -16,7 +16,8 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
 
     evaluator = src.WorkingEvaluatorBlock.evaluator
     evaluator.current_node = n
-    midx = (n.UpperVar - n.LowerVar)/2.0
+    midx = n.LowerVar + (n.UpperVar - n.LowerVar)/2.0
+    println("midx: $midx")
 
     # Add objective
     if src.WorkingEvaluatorBlock.has_objective
@@ -35,8 +36,13 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
         g_cc = zeros(Float64,leng)
         dg_cc = zeros(Float64,leng,src.VariableNumber)
 
+        println("assigned storage")
+
         MOI.eval_constraint(evaluator, g, midx)
         MOI.eval_constraint_jacobian(evaluator, dg,  midx)
+
+        println("g: $g")
+        println("dg: $dg")
 
         # gets jacobian and gradient of convex terms
         for i in 1:length(evaluator.constraints)

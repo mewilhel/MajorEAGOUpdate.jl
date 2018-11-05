@@ -64,10 +64,10 @@ function MOI.optimize!(m::Optimizer)
     #m.Preprocess(m,m.Stack[1])
     #feas1 = PoorManLP(m,m.Stack[1])
     #feas2 = OBBT(m,m.Stack[1])
-    m.LowerProblem(m,m.Stack[1])
-    m.UpperProblem(m,m.Stack[1])
+    #m.LowerProblem(m,m.Stack[1])
+    #m.UpperProblem(m,m.Stack[1])
     #m.Postprocess(m,m.Stack[1])
 
     # Runs the branch and bound routine
-    #SolveNLP!(m)
+    SolveNLP!(m)
 end
