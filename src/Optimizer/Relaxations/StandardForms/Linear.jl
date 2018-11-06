@@ -8,6 +8,12 @@ function RelaxLinear!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
     for (func,set,ind) in src.LinearEQConstraints
         MOI.add_constraint(trg, func, set)
     end
+
+    if isa(src.Objective, MOI.SingleVariable)
+        MOI.set(trg, MOI.ObjectiveFunction{MOI.SingleVariable}(), src.Objective)
+    elseif isa(src.Objective, MOI.ScalarAffineFunction{Float64})
+        MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), src.Objective)
+    end
 end
 
 # Relaxes nonlinear term via MidPoint Affine calculation
@@ -24,7 +30,7 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
         df = zeros(Float64,src.VariableNumber)
         f = MOI.eval_objective(evaluator, midx)
         MOI.eval_objective_gradient(evaluator, df, midx)
-        MOI.set(trg, MOI.ObjectiveFunction{ MOI.ScalarAffineFunction{Float64}}(),  MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(df, var), f+sum(midx.*df)))
+        MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(df, var), f+sum(midx.*df)))
     end
 
     # Add other affine constraints

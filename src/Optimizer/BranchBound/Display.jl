@@ -7,7 +7,7 @@ solution, and time spent solving subproblems.
 function PrintSolution!(x::Optimizer)
   temp::Float64 = 0.0
   println("First Solution Found at Node $(x.FirstSolutionNode)")
-  if (x.Verbosity == :Normal || x.Verbosity == :Full)
+  if (x.Verbosity == 1 || x.Verbosity == 2 || x.Verbosity == 3)
     println("UBD = $(x.GlobalUpperBound)")
     println("Solution is :")
     if (x.FeasibleSolutionFnd)
@@ -29,9 +29,7 @@ end
 Prints node information for the B&B problem. Node id, bound, and interval box.
 """
 function PrintNode!(id::Int,x::NodeBB)
-  if (x.Verbosity == :Full)
-    println("Node ID: $(id), Lower Bound: $(x.LowerBound), IntervalBox: $(x.ContinousValues)")
-  end
+    println("Node ID: $(id), Lower Bound: $(x.LowerBound), Lower Variable Bounds: $(x.LowerVar), Upper Variable Bounds: $(x.UpperVar)")
 end
 
 
@@ -43,7 +41,7 @@ The header is displayed every hdr_intv, the iteration info is displayed every
 itr_intv
 """
 function print_int!(B::Optimizer)
-  if ((B.Verbosity == :Full)||(B.Verbosity == :Normal))
+  if (B.Verbosity == 1 || B.Verbosity == 2 || B.Verbosity == 3)
     # prints header line every B.hdr_intv times
     if (mod(k_int,B.HeaderInterval) == 0 || k_int == 1)
       println("Iteration   NodeID    Current_LBD     Global_LBD     Global_UBD      NodesLeft     Absolute_Gap    Absolute_Ratio     LBD_Feas     UBD_Feas")
@@ -73,7 +71,7 @@ end
 Prints the results of a single bounding problem.
 """
 function PrintResults!(B::Optimizer,lbd_bool::Bool)
-  if (B.Verbosity == :Full)
+  if (B.Verbosity == 2 || B.Verbosity == 3)
     if (lbd_bool)
       println("Lower Bound: $(B.CurrentLowerInfo.Value), Solution: $(B.CurrentLowerInfo.Solution), Feasibility: $(B.CurrentLowerInfo.Feasibility)")
     else

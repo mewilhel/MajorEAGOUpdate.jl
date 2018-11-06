@@ -2,7 +2,10 @@
 Defines empty structures
 =#
 
-struct EmptyNLPEvaluator <: MOI.AbstractNLPEvaluator end
+mutable struct EmptyNLPEvaluator <: MOI.AbstractNLPEvaluator
+    current_node::NodeBB
+end
+EmptyNLPEvaluator() = EmptyNLPEvaluator(NodeBB())
 
 MOI.features_available(::EmptyNLPEvaluator) = [:Grad, :Jac, :Hess]
 MOI.initialize(::EmptyNLPEvaluator, features) = nothing

@@ -2,6 +2,7 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
     if is_integer_feasible(x)
         # Copies initial model into working model (if initial model isn't dummy)
         if x.InitialUpperOptimizer != DummyOptimizer()
+            println("copied initial optimizer")
             #MOI.copy_to(x.WorkingUpperOptimizer,x.InitialUpperOptimizer)
             x.WorkingUpperOptimizer = deepcopy(x.InitialUpperOptimizer)
         end

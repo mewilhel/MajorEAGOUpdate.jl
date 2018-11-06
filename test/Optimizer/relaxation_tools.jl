@@ -236,7 +236,7 @@ end
     xstar1 = xpoint
     gstar1 = [1.2]
     dfstar1 = xpoint
-    Jstar1 = dfstar1
+    Jstar1 = dfstar1'
 
     temp1 = MOI.features_available(built_evaluator)
     temp2 = MOI.eval_objective(built_evaluator, xstar1)
@@ -251,8 +251,8 @@ end
 
     @test temp1[1] == :Grad
     @test temp1[2] == :Jac
-    @test isapprox(temp4[1],-5099.264424,atol=1E-3)
-    @test temp4[2] == 3400.0
+    @test isapprox(dfstar1[1],-5099.264424,atol=1E-3)
+    @test dfstar1[2] == 3400.0
     @test temp5[1][1] == 1
     @test temp5[1][2] == 1
     @test temp5[2][1] == 1

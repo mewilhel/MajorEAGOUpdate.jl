@@ -191,7 +191,8 @@ end
 function RelaxQuadratic!(trg, src::Optimizer, n::NodeBB, r::RelaxationScheme)
     #count = 0
     x0 = (n.UpperVar - n.LowerVar)/2.0
-    # Relax Convex Quadratic Terms
+
+    # Relax Convex Constraint Terms
     for (func, set, ind) in src.QuadraticLEQConstraints
         MOIindx = MOI.ConstraintIndex{MOI.ScalarQuadraticFunction{Float64},MOI.LessThan{Float64}}(ind)
         if src.ConstraintConvexity[MOIindx]
@@ -222,4 +223,16 @@ function RelaxQuadratic!(trg, src::Optimizer, n::NodeBB, r::RelaxationScheme)
             Relax_Nonconvex_Quadratic!(trg, src, func, set.value, set.value, n, x0)
         end
     end
+
+    # Relax quadratic objective
+    if typeof(src.Objective) == MOI.ScalarQuadraticFunction{Float64} # quadratic objective
+        if (m.ObjectiveConvexity)
+            #count += 1; println("count: $count    EQ Convex")
+            Relax_Convex_Quadratic_Inner!(trg, src, src.Objective, set.value, set.value, n, x0)
+        else
+            #count += 1; println("count: $count    EQ Nonconvex")
+            Relax_Nonconvex_Quadratic!(trg, src, src.Objective, set.value, set.value, n, x0)
+        end
+    end
+    MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  QuadMidPoint)
 end

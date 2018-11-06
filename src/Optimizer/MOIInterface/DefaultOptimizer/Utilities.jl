@@ -41,23 +41,30 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
     # Updates variables bounds
     typevar = m.UpperVariables
     for (i,var) in enumerate(m.VariableInfo)
+        println("i: $i")
+        println("var: $var")
         var_xi = MOI.SingleVariable(typevar[i])
+        println("var_xi: $var_xi")
         if var.is_integer
         else
             if var.is_fixed
-                MOI.add_constraint(m, var_xi, MOI.EqualTo(y.LowerVar[i]))
+                println("ran fixed")
+                MOI.add_constraint(z, var_xi, MOI.EqualTo(y.LowerVar[i]))
             elseif var.has_lower_bound
                 if var.has_upper_bound
-                    MOI.add_constraint(m, var_xi, MOI.LessThan(y.LowerVar[i]))
-                    MOI.add_constraint(m, var_xi, MOI.GreaterThan(y.UpperVar[i]))
+                    println("has both bounds")
+                    MOI.add_constraint(z, var_xi, MOI.LessThan(y.LowerVar[i]))
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.UpperVar[i]))
                 else
-                    MOI.add_constraint(m, var_xi, MOI.GreaterThan(y.UpperVar[i]))
+                    println("has lower bound only")
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.UpperVar[i]))
                 end
             elseif var.has_upper_bound
-                MOI.add_constraint(m, var_xi, MOI.LessThan(y.LowerVar[i]))
+                println("has upper bound only")
+                MOI.add_constraint(z, var_xi, MOI.LessThan(y.LowerVar[i]))
             end
         end
-        push!(m.VariableIndexUpp,VarTupleUpp)
+        #push!(m.VariableIndexUpp,VarTupleUpp)
     end
 end
 

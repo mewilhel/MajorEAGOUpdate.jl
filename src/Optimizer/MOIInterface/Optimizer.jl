@@ -63,6 +63,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     CurrentPostprocessInfo::PostprocessInfo           # Problem solution info for postprocessing step
 
     Objective::Union{MOI.SingleVariable,MOI.ScalarAffineFunction{Float64},MOI.ScalarQuadraticFunction{Float64},Nothing}
+    ObjectiveConvexity::Bool
 
     LinearLEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64},Int}}
     LinearGEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64},Int}}
@@ -184,10 +185,14 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     # Status flags
     FirstRelaxed::Bool
 
+    # Debug
+    Debug::Any
+
     function Optimizer(;options...)
 
         m = new()
 
+        m.Debug = []
         m.InputModel = 0
         m.IntegerVar = Int[]
         m.VariableInfo = VariableInfo[]
@@ -255,6 +260,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.CurrentPostprocessInfo = PostprocessInfo()
 
         m.Objective = nothing
+        m.ObjectiveConvexity = false
 
         m.LPOptimizer = DummyOptimizer()
         m.MILPOptimizer = DummyOptimizer()
@@ -287,7 +293,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.FailedSolver = NoFailure
 
         # Output specification fields
-        m.Verbosity = 1
+        #m.Verbosity = 1
+        m.Verbosity = 3
         m.WarmStart = false
         m.OutputInterations = 10
         m.HeaderInterations = 100

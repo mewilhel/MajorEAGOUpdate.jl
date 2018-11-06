@@ -39,6 +39,8 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
+    x.Debug = x.WorkingRelaxedOptimizer
+    return x.WorkingRelaxedOptimizer               # CHANGE ME
     MOI.optimize!(x.WorkingRelaxedOptimizer)
     #redirect_stdout(tt)
 

@@ -55,6 +55,10 @@ function MOI.optimize!(m::Optimizer)
 
     # Sets up relaxations terms that don't vary during iterations (mainly linear)
     m.LowerVariables = MOI.VariableIndex.(1:m.VariableNumber)
+
+    # Check convexity of objective function and quadratic constraints
+
+    # Relax initial model terms
     RelaxModel!(m, m.InitialRelaxedOptimizer, m.Stack[1], m.Relaxation, load = true)
 
     # Sets upper bounding problem using terms specified in optimizer

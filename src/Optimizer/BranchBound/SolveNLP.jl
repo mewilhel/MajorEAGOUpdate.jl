@@ -19,8 +19,10 @@ function SolveNLP!(x::Optimizer)
   NumberOfCuts = 0
 
   # terminates when max nodes or iteration is reach, or when node stack is empty
+  iterationcountinternal = 0
   while (x.TerminationCheck(x))
-
+    iterationcountinternal += 1
+    println("iterationcountinternal: $iterationcountinternal")
     # Fathom nodes with lower bound greater than global upper bound
     x.GlobalLowerBound = FindLowerBound(x)
     x.History.LowerBound[x.CurrentIterationCount] = x.GlobalLowerBound
@@ -33,17 +35,22 @@ function SolveNLP!(x::Optimizer)
 
      # Selects node, deletes it from stack, prints based on verbosity
     CurrentKey,CurrentNode = x.NodeSelection(x)
-    (x.Verbosity == :Full) && PrintNode!(CurrentKey,CurrentNode) # Prints node in full verbosity mode
+    (x.Verbosity == 3) && PrintNode!(CurrentKey,CurrentNode) # Prints node in full verbosity mode
 
     # Solves preprocessing/LBD/UBD/postprocessing once to get timing right
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
     if (x.CurrentIterationCount == 0)
+      println("start preprocess")
       tempNode = copy(CurrentNode)
       x.Preprocess(x,tempNode)
-      x.LowerProblem(x,tempNode)
+      println("ran initial preprocess")
+      return x.LowerProblem(x,tempNode) # CHANGE
+      println("ran initial lower problem")
       x.UpperProblem(x,tempNode)
+      println("ran initial upper problem")
       x.Postprocess(x,tempNode)
+      println("ran initial postprocess")
     end
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
@@ -54,6 +61,7 @@ function SolveNLP!(x::Optimizer)
     PreprocessTime = x.Preprocess(x,CurrentNode)
     #x.History.PreprocessTime[x.CurrentIterationCount] = x.History.PreprocessTime[x.CurrentIterationCount-1]+PreprocessTime
     #redirect_stdout(TT)
+    println("Preprocessing Step")
 
     x.CurrentUpperInfo.Feasibility = true
     if (x.CurrentPreprocessInfo.Feasibility)
@@ -62,6 +70,7 @@ function SolveNLP!(x::Optimizer)
       #redirect_stdout()
       #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
       LowerProblemTime = x.LowerProblem(x,CurrentNode)
+      println("Ran Lower Problem Step")
       #x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
       #redirect_stdout(TT)
@@ -72,6 +81,7 @@ function SolveNLP!(x::Optimizer)
         #redirect_stdout()
         #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
         LowerProblemTime = x.LowerProblem(x,CurrentNode)
+        println("Ran Cut: $(x.CutIterations)")
         #x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount]+LowerProblemTime
         x.History.LowerCount += 1
         #redirect_stdout(TT)
