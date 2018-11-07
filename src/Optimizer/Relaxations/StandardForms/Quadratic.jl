@@ -234,5 +234,5 @@ function RelaxQuadratic!(trg, src::Optimizer, n::NodeBB, r::RelaxationScheme)
             Relax_Nonconvex_Quadratic!(trg, src, src.Objective, set.value, set.value, n, x0)
         end
     end
-    MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  QuadMidPoint)
+    #MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  QuadMidPoint)
 end

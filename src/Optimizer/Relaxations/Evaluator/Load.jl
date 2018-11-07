@@ -18,9 +18,7 @@ end
 function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.AbstractNLPEvaluator}
 
     # Checks to see if nlp data block evaluator is present
-    println("typeof src: $(typeof(src))")
     if (typeof(src) != MajorEAGOUpdate.EmptyNLPEvaluator)
-        println("ran nlp eval build")
 
         # Creates the empty evaluator
         d = Evaluator{S}(src.m)

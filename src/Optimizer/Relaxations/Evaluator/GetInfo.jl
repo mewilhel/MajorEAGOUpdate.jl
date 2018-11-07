@@ -87,12 +87,15 @@ function MOI.eval_constraint_jacobian(d::Evaluator,g,x)
     #d.eval_constraint_jacobian_timer += @elapsed begin
         forward_reverse_pass(d,x)
         #t = typeof(d.constraints[1].setstorage[1])
-        g = zero.(g)
+        #g = zero.(g)
         for i in 1:length(d.constraints)
             if ~d.constraints[i].numvalued[1]
-                println("constaint not number")
                 for j in 1:length(d.constraints[i].setstorage[1].cv_grad)
                     g[i,j] = d.constraints[i].setstorage[1].cv_grad[j]
+                end
+            else
+                for j in 1:length(d.constraints[i].setstorage[1].cv_grad)
+                    g[i,j] = 0.0
                 end
             end
         end

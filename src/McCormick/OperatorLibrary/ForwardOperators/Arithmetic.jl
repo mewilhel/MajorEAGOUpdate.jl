@@ -12,6 +12,7 @@ mid(x::MC) = mid(x.Intv)
                                      (x.cnst && y.cnst))
 
 -(x::MC{N}) where N = MC{N}(-x.cc, -x.cv, -x.Intv, -x.cc_grad, -x.cv_grad, x.cnst)
--(x::MC{N},y::MC{N}) where N = x + MC{N}(x.cv-y.cc, x.cc-y.cv, (x.Intv-y.Intv),
-                                         x.cv_grad-y.cc_grad, x.cc_grad-y.cv_grad,
-                                        (x.cnst && y.cnst))
+
+-(x::MC{N},y::MC{N}) where N = MC{N}(x.cv-y.cc, x.cc-y.cv, (x.Intv-y.Intv),
+                                     x.cv_grad-y.cc_grad, x.cc_grad-y.cv_grad,
+                                     (x.cnst && y.cnst))

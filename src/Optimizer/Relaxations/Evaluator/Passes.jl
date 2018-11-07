@@ -1,5 +1,8 @@
 function SetValueConstruct(i::Int,N::Int,x_values::Vector{Float64},node::NodeBB)
-    @inbounds MC{N}(x_values[i],x_values[i], Interval{Float64}(node.LowerVar[i],node.UpperVar[i]),seedg(Float64,i,N),seedg(Float64,i,N),false)
+    @inbounds xval = x_values[i]
+    @inbounds intv = Interval{Float64}(node.LowerVar[i],node.UpperVar[i])
+    seed = seedg(Float64,i,N)
+    @inbounds MC{N}(xval, xval,intv,seed,seed,false)
 end
 
 #=
@@ -35,7 +38,6 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
         # compute the value of node k
         @inbounds nod = nd[k]
         op = nod.index
-        #println("op assigment: $op")
         if nod.nodetype == JuMP.Derivatives.VARIABLE
             setstorage[k] = SetValueConstruct(nod.index,N,x_values,current_node)
             #println("AT k: $k,   VARIABLE assigment yeilds setstorage: $(setstorage[k])")
@@ -105,11 +107,9 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 end
                 numvalued[k] = isnum
                 if (isnum)
-                    numberstorage[k] = tmp_sum
-                    #println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(tmp_sum)")
+                    numberstorage[k] = tmp_sub
                 else
                     setstorage[k] = SetValuePost(x_values, tmp_sub, current_node)
-                    #println("AT k: $k,   MINUS CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
             elseif op == 3 # :*
                 tmp_prod = 1.0
