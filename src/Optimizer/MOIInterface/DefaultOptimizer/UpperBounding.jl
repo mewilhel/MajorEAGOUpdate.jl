@@ -15,6 +15,8 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
         #redirect_stdout()
         MOI.optimize!(x.WorkingUpperOptimizer)
         #redirect_stdout(tt)
+        x.Debug = x.WorkingUpperOptimizer
+        #return x.WorkingUpperOptimizer
 
         # Process output info and save to CurrentUpperInfo object
         termination_status = MOI.get(x.WorkingUpperOptimizer, MOI.TerminationStatus())

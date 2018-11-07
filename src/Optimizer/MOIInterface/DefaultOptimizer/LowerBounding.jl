@@ -1,8 +1,8 @@
 function SetDual!(x::Optimizer)
-    println("started set dual")
+    #println("started set dual")
     for (vi,VarIndxTuple) in enumerate(x.VariableIndexLow)
         (ci1,ci2,n) = VarIndxTuple
-        println("VarIndxTuple: $VarIndxTuple")
+        #println("VarIndxTuple: $VarIndxTuple")
         if (n == 2)
             if isa(ci1,MOI.ConstraintIndex{MOI.SingleVariable,MOI.GreaterThan{Float64}})
                 x.CurrentLowerInfo.LowerVarDual[vi] = MOI.get(x.WorkingRelaxedOptimizer, MOI.ConstraintDual(), ci1)
@@ -37,14 +37,14 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
 
     RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
-    println("model was relaxed")
+    #println("model was relaxed")
 
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
     x.Debug = x.WorkingRelaxedOptimizer
     MOI.optimize!(x.WorkingRelaxedOptimizer)
-    return x.WorkingRelaxedOptimizer               # CHANGE ME
+    #return x.WorkingRelaxedOptimizer               # CHANGE ME
     #redirect_stdout(tt)
 
     # Process output info and save to CurrentUpperInfo object

@@ -45,7 +45,7 @@ function SolveNLP!(x::Optimizer)
       tempNode = copy(CurrentNode)
       x.Preprocess(x,tempNode)
       println("ran initial preprocess")
-      return x.LowerProblem(x,tempNode) # CHANGE
+      x.LowerProblem(x,tempNode)
       println("ran initial lower problem")
       x.UpperProblem(x,tempNode)
       println("ran initial upper problem")

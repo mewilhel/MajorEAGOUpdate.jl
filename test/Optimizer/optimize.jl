@@ -149,31 +149,96 @@ backend6pstatus = m.moi_backend.model.optimizer.primal_status
 backend6dstatus = m.moi_backend.model.optimizer.dual_status
 =#
 debug6 = m.moi_backend.model.optimizer.Debug
-
 #=
-# Test NLP #7 Infeasible
+# Test QP Convex #7
 println("----- Test Example 7 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
 #m = Model(with_optimizer(Clp.Optimizer))
 
-@variable(m, -3 <= x <= -1)
-@variable(m, -2 <= y <= 2)
-@variable(m, 1 <= z <= 3)
-@variable(m, -10 <= q <= 9)
+@variable(m, 1 <= x <= 3)
+@variable(m, 1 <= y <= 3)
 
-@NLobjective(m, Min, 2x - 3y + 2z)
+@objective(m, Min, x + y)
 
-@NLconstraint(m, x + 2y >= -10)
-@NLconstraint(m, z - 2y <= 2)
-@NLconstraint(m, y >= 4)
-@NLconstraint(m, q-3*z-y >= 0)
+@constraint(m, x + y <= 10)
+@constraint(m, x - y <= 10)
+@constraint(m, y >= 0)
 
 JuMP.optimize!(m)
 #=
-backend6sol = m.moi_backend.model.optimizer.variable_primal_solution
-backend6term = m.moi_backend.model.optimizer.termination_status
-backend6pstatus = m.moi_backend.model.optimizer.primal_status
-backend6dstatus = m.moi_backend.model.optimizer.dual_status
+backend7sol = m.moi_backend.model.optimizer.variable_primal_solution
+backend7term = m.moi_backend.model.optimizer.termination_status
+backend7pstatus = m.moi_backend.model.optimizer.primal_status
+backend7dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug6 = m.moi_backend.model.optimizer.Debug
+debug7 = m.moi_backend.model.optimizer.Debug
+
+# Test QP Convex #7 Infeasible
+println("----- Test Example 8 -----")
+m = Model(with_optimizer(EAGO.Optimizer))
+#m = Model(with_optimizer(Clp.Optimizer))
+
+@variable(m, 1 <= x <= 3)
+@variable(m, 1 <= y <= 3)
+
+@objective(m, Min, x + y)
+
+@constraint(m, x + y <= 10)
+@constraint(m, x - y <= 10)
+@constraint(m, y >= 0)
+
+JuMP.optimize!(m)
+#=
+backend8sol = m.moi_backend.model.optimizer.variable_primal_solution
+backend8term = m.moi_backend.model.optimizer.termination_status
+backend8pstatus = m.moi_backend.model.optimizer.primal_status
+backend8dstatus = m.moi_backend.model.optimizer.dual_status
+=#
+debug8 = m.moi_backend.model.optimizer.Debug
+
+# Test QP Nonconvex #9
+println("----- Test Example 9 -----")
+m = Model(with_optimizer(EAGO.Optimizer))
+#m = Model(with_optimizer(Clp.Optimizer))
+
+@variable(m, 1 <= x <= 3)
+@variable(m, 1 <= y <= 3)
+
+@objective(m, Min, x + y)
+
+@constraint(m, x + y <= 10)
+@constraint(m, x - y <= 10)
+@constraint(m, y >= 0)
+
+JuMP.optimize!(m)
+#=
+backend9sol = m.moi_backend.model.optimizer.variable_primal_solution
+backend9term = m.moi_backend.model.optimizer.termination_status
+backend9pstatus = m.moi_backend.model.optimizer.primal_status
+backend9dstatus = m.moi_backend.model.optimizer.dual_status
+=#
+debug9 = m.moi_backend.model.optimizer.Debug
+
+# Test QP Nonconvex #10 Infeasible
+println("----- Test Example 10 -----")
+m = Model(with_optimizer(EAGO.Optimizer))
+#m = Model(with_optimizer(Clp.Optimizer))
+
+@variable(m, 1 <= x <= 3)
+@variable(m, 1 <= y <= 3)
+
+@objective(m, Min, x + y)
+
+@constraint(m, x + y <= 10)
+@constraint(m, x - y <= 10)
+@constraint(m, y >= 0)
+
+JuMP.optimize!(m)
+#=
+backend10sol = m.moi_backend.model.optimizer.variable_primal_solution
+backend10term = m.moi_backend.model.optimizer.termination_status
+backend10pstatus = m.moi_backend.model.optimizer.primal_status
+backend10dstatus = m.moi_backend.model.optimizer.dual_status
+=#
+debug10 = m.moi_backend.model.optimizer.Debug
 =#

@@ -53,15 +53,15 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
             elseif var.has_lower_bound
                 if var.has_upper_bound
                     println("has both bounds")
-                    MOI.add_constraint(z, var_xi, MOI.LessThan(y.LowerVar[i]))
-                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.UpperVar[i]))
+                    MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 else
                     println("has lower bound only")
-                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.UpperVar[i]))
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 end
             elseif var.has_upper_bound
                 println("has upper bound only")
-                MOI.add_constraint(z, var_xi, MOI.LessThan(y.LowerVar[i]))
+                MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
             end
         end
         #push!(m.VariableIndexUpp,VarTupleUpp)
@@ -69,6 +69,7 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
 end
 
 function SetLocalNLP!(m::Optimizer)
+    println("ran set local nlp")
     #m.WorkingUpperOptimizer = deepcopy(m.NLPOptimizer)
 
     # Add variables to model
@@ -81,29 +82,35 @@ function SetLocalNLP!(m::Optimizer)
 
     # Add linear and quadratic constraints to model
     for (func, set) in m.LinearLEQConstraints
-         MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+         println("add constr 1")
+         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearGEQConstraints
-        MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+        println("add constr 2")
+        MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearEQConstraints
-        MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+        println("add constr 3")
+        MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticLEQConstraints
-        MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+        println("add constr 4")
+        MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticGEQConstraints
-        MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+        println("add constr 5")
+        MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticEQConstraints
-        MOI.add_constraint(m.WorkingUpperOptimizer,func,set)
+        println("add constr 6")
+        MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
 
     # Add nonlinear evaluation block
-    MOI.set(m.WorkingUpperOptimizer, MOI.NLPBlock(), m.NLPData)
+    MOI.set(m.InitialUpperOptimizer, MOI.NLPBlock(), m.NLPData)
 
     # Add objective sense
-    MOI.set(m.WorkingUpperOptimizer, MOI.ObjectiveSense(), m.OptimizationSense)
+    MOI.set(m.InitialUpperOptimizer, MOI.ObjectiveSense(), m.OptimizationSense)
 
     # Specifies variables in upper problem
     m.UpperVariables = MOI.VariableIndex.(1:m.VariableNumber)
@@ -111,11 +118,11 @@ function SetLocalNLP!(m::Optimizer)
     # Add objective function (if any)
     if (m.Objective != nothing)
         if typeof(m.Objective) == MOI.SingleVariable
-            MOI.set(m.WorkingUpperOptimizer, MOI.ObjectiveFunction{MOI.SingleVariable}(), m.Objective)
+            MOI.set(m.InitialUpperOptimizer, MOI.ObjectiveFunction{MOI.SingleVariable}(), m.Objective)
         elseif typeof(m.Objective) == MOI.ScalarAffineFunction{Float64}
-            MOI.set(m.WorkingUpperOptimizer, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), m.Objective)
+            MOI.set(m.InitialUpperOptimizer, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), m.Objective)
         elseif typeof(m.Objective) == MOI.ScalarQuadraticFunction{Float64}
-            MOI.set(m.WorkingUpperOptimizer, MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}(), m.Objective)
+            MOI.set(m.InitialUpperOptimizer, MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}(), m.Objective)
         end
     else
         @assert m.NLPData != empty_nlp_data()
