@@ -39,7 +39,7 @@ mutable struct NodeHistory
     UpperTime::Dict{Int,Float64}          # Interation --> Upper Problem Run Time
     PreprocessTime::Dict{Int,Float64}     # Interation --> Preprocess Problem Run Time
     PostprocessTime::Dict{Int,Float64}    # Interation --> Postprocess Problem Run Time
-    CutNumber::Dict{Int,Int}              # Iteration --> Number of Cuts Used
+    CutCount::Dict{Int,Int}              # Iteration --> Number of Cuts Used
     Count::Dict{Int,Int}                  # Interation --> Number of Nodes
 end
 NodeHistory() = NodeHistory(0,0,Dict{Int,Float64}(),
@@ -53,4 +53,13 @@ NodeHistory() = NodeHistory(0,0,Dict{Int,Float64}(),
 
 function copy(x::NodeBB)
     return NodeBB(x.LowerVar, x.UpperVar, x.LowerBound, x.UpperBound, x.Depth, x.LastBranch, x.DirBranch)
+end
+
+function SameBox(x::NodeBB,y::NodeBB,atol::Float64)
+    bool = true
+    for i in 1:length(x.LowerVar)
+        x.LowerVar[i] != y.LowerVar[i]
+
+    end
+    return bool
 end

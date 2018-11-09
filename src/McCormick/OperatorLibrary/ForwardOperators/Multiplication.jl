@@ -355,6 +355,7 @@ function mul1_u1pos_u2pos(x1::MC{N},x2::MC{N},cnst::Bool) where N
   cv,cc,cv_grad,cc_grad = cut(xLc,xUc,cv,cc,cv_grad,cc_grad)
   return MC{N}(cv,cc,Intv,cv_grad,cc_grad,cnst)
 end
+
 function mul1_u1pos_u2mix(x1::MC{N},x2::MC{N},cnst::Bool) where N
   Intv = x1.Intv*x2.Intv
   xLc = Intv.lo
@@ -435,6 +436,7 @@ function mul2_u1pos_u2pos(x1::MC{N},x2::MC{N}) where N
 	cv,cc,cv_grad,cc_grad = cut(xLc,xUc,cv,cc,cv_grad,cc_grad)
 	return MC{N}(cv,cc,Intv,cv_grad,cc_grad,cnst)
 end
+
 function mul2_u1pos_u2mix(x1::MC{N},x2::MC{N},cnst::Bool) where N
   Intv = x1.Intv*x2.Intv
   xLc = Intv.lo
@@ -461,6 +463,7 @@ function mul2_u1pos_u2mix(x1::MC{N},x2::MC{N},cnst::Bool) where N
   cv,cc,cv_grad,cc_grad = cut(xLc,xUc,cv,cc,cv_grad,cc_grad)
   return MC{N}(cv,cc,Intv,cv_grad,cc_grad,cnst)
 end
+
 function mul2_u1mix_u2mix(x1::MC{N},x2::MC{N}) where N
 	Intv = x1.Intv*x2.Intv
 	xLc = Intv.lo
@@ -747,7 +750,6 @@ function *(x1::MC{N},x2::MC{N}) where N
 	degen2 = ((x2.Intv.hi - x2.Intv.lo) == 0.0)
 
 	if (MC_param.mu >= 1 && ~(degen1||degen2))
-		#println("traces multi")
 		return multiply_MV(x1,x2)
 		#=
 	elseif (MC_param.multivar_refine && ~(degen1||degen2))
@@ -780,11 +782,9 @@ function *(x1::MC{N},x2::MC{N}) where N
 		return -((-x2)*x1)
 	else
     	if (x2.cnst)
-			#println("NS mult trace 5")
 	  		return STD_NS_ALT(x1,x2)
       		#return mul1_u1mix_u2mix(x1,x2,x1.cnst)
     	elseif (x1.cnst)
-	  		#println("NS mult trace 6")
 	  		return STD_NS_ALT(x1,x2)
       		#return mul1_u1mix_u2mix(x2,x1,x2.cnst)
     	else

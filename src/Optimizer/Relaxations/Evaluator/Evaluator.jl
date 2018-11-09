@@ -52,6 +52,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     has_nlobj::Bool
     has_reverse::Bool
     fw_repeats::Int
+    fw_atol::Float64
     objective::FunctionSetStorage
     constraints::Vector{FunctionSetStorage{T}}
     subexpressions::Vector{SubexpressionSetStorage{T}}
@@ -60,6 +61,7 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     subexpression_linearity::Vector{JuMP.Derivatives.Linearity}
     subexpressions_as_julia_expressions::Vector{Any}
     last_x::Vector{Float64}
+    last_obj::T
     jac_storage::Vector{T}
     user_output_buffer::Vector{T}
     eval_objective_timer::Float64

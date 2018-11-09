@@ -21,7 +21,7 @@ function EAGODefault_PreProcess!(x::Optimizer,y::NodeBB)
         #LPFlag && (feas = PoorManLP(x,y));                (~feas) && (break)
         #UQFlag && (feas = UnivariateQuadratic(x,y));      (~feas) && (break)
         #BQFlag && (feas = BivariateQuadratic(x,y));       (~feas) && (break)
-        #CPFlag && (feas = CPTreeWalk(x,y));               (~feas) && (break)
+        #CPFlag && (feas = CPWalk!(x,y));               (~feas) && (break)
 
         ContFlag = (LPFlag || UQFlag || BQFlag || CPFlag)
         rept += 1

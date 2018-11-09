@@ -45,7 +45,7 @@ function SolveNLP!(x::Optimizer)
       tempNode = copy(CurrentNode)
       x.Preprocess(x,tempNode)
       println("ran initial preprocess")
-      x.LowerProblem(x,tempNode)
+      #x.LowerProblem(x,tempNode)
       println("ran initial lower problem")
       x.UpperProblem(x,tempNode)
       println("ran initial upper problem")
@@ -69,8 +69,10 @@ function SolveNLP!(x::Optimizer)
 
       #redirect_stdout()
       #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
+      println("Begin Lower Problem Step")
+      println("CurrentNode: $CurrentNode")
       LowerProblemTime = x.LowerProblem(x,CurrentNode)
-      println("Ran Lower Problem Step")
+      println("Finish Lower Problem Step")
       #x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
       #redirect_stdout(TT)
@@ -143,11 +145,19 @@ function SolveNLP!(x::Optimizer)
       x.CurrentLowerInfo.Feasibility = false
       x.CurrentUpperInfo.Feasibility = false
     end
-    (~UBDSaveFlag) && (x.History.UpperBound[x.CurrentIterationCount] = x.GlobalUpperBound[x.CurrentIterationCount-1])
+    println("flag1")
+    println("UBD: $(x.GlobalUpperBound)")
+    println("UBD: $(x.GlobalUpperBound)")
+    (~UBDSaveFlag) && (x.History.UpperBound[x.CurrentIterationCount] = x.GlobalUpperBound)
+    println("flag2")
     (~UBDTempSaveFlag) && (x.History.UpperTime[x.CurrentIterationCount] = x.History.UpperTime[x.CurrentIterationCount-1])
+    println("flag3")
     (~PostSaveFlag) && (x.History.PostprocessTime[x.CurrentIterationCount] = x.History.PostprocessTime[x.CurrentIterationCount-1])
+    println("flag4")
     x.History.Count[x.CurrentIterationCount] = x.CurrentNodeCount
+    println("flag5")
     PrintIteration!(x)
+    println("flag6")
     x.CurrentIterationCount += 1
   end
 

@@ -414,8 +414,11 @@ function forward_reverse_pass(d::Evaluator,x)
     if d.last_x != x
         if d.has_reverse
             for i in d.fw_repeats
+                d.last_obj = d.current_node
                 forward_eval_all(d,x)
                 reverse_eval_all(d,x)
+                # if node on reverse is same... forward reversing
+                SameBox(d.last_obj,GetNode(d),d.fw_atol) && break
             end
         else
             forward_eval_all(d,x)

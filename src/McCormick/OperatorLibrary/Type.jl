@@ -27,5 +27,5 @@ end
 
 """MC(y::Interval) initializes the differentiable McCormick object with an interval
 """
-MC{N}(y::IntervalType) where N = MC{N}(y.hi,y.lo,y,[],[],true)
-MC{N}(val,Intv::IntervalType) where N = MC{N}(val,val,Intv,[],[],true)
+MC{N}(y::IntervalType) where N = MC{N}(y.hi,y.lo,y,SVector{N,Float64}(zeros(Float64,N)),SVector{N,Float64}(zeros(Float64,N)),true)
+MC{N}(val,Intv::IntervalType) where N = MC{N}(val,val,Intv,SVector{N,Float64}(zeros(Float64,N)),SVector{N,Float64}(zeros(Float64,N)),true)

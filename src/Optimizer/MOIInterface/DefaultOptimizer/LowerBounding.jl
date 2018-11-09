@@ -33,16 +33,15 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
         println("copied initial relaxed solver")
     end
 
-
     Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
+    println("fixed lower variable bounds")
 
     RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
-    #println("model was relaxed")
+    println("model was relaxed")
 
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
-    x.Debug = x.WorkingRelaxedOptimizer
     MOI.optimize!(x.WorkingRelaxedOptimizer)
     #return x.WorkingRelaxedOptimizer               # CHANGE ME
     #redirect_stdout(tt)
@@ -56,11 +55,12 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
         if (result_status != MOI.FeasiblePoint)
             x.CurrentLowerInfo.Feasibility = false
             x.CurrentLowerInfo.Value = Inf
+        else
+            x.CurrentLowerInfo.Feasibility = true
+            x.CurrentLowerInfo.Value = objvalue
+            x.CurrentLowerInfo.Solution[1:end] = MOI.get(x.WorkingRelaxedOptimizer, MOI.VariablePrimal(), x.LowerVariables)
+            SetDual!(x)
         end
-        x.CurrentLowerInfo.Feasibility = true
-        x.CurrentLowerInfo.Value = objvalue
-        x.CurrentLowerInfo.Solution[1:end] = MOI.get(x.WorkingRelaxedOptimizer, MOI.VariablePrimal(), x.LowerVariables)
-        SetDual!(x)
     else
         x.CurrentLowerInfo.Feasibility = false
         x.CurrentLowerInfo.Value = Inf
