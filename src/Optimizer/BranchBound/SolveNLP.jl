@@ -13,7 +13,7 @@ function SolveNLP!(x::Optimizer)
   UBDTempSaveFlag = false
   PostSaveFlag = false
   if (~x.WarmStart)
-    x.CurrentIterationCount = 0
+    x.CurrentIterationCount = 1
     x.CurrentNodeCount = 0
   end
   NumberOfCuts = 0
@@ -22,7 +22,7 @@ function SolveNLP!(x::Optimizer)
   iterationcountinternal = 0
   while (x.TerminationCheck(x))
     iterationcountinternal += 1
-    println("iterationcountinternal: $iterationcountinternal")
+    #println("iterationcountinternal: $iterationcountinternal")
     # Fathom nodes with lower bound greater than global upper bound
     x.GlobalLowerBound = FindLowerBound(x)
     x.History.LowerBound[x.CurrentIterationCount] = x.GlobalLowerBound
@@ -40,53 +40,47 @@ function SolveNLP!(x::Optimizer)
     # Solves preprocessing/LBD/UBD/postprocessing once to get timing right
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
-    if (x.CurrentIterationCount == 0)
-      println("start preprocess")
+    if (x.CurrentIterationCount == 1)
+      #println("start preprocess")
       tempNode = copy(CurrentNode)
       x.Preprocess(x,tempNode)
-      println("ran initial preprocess")
+      #println("ran initial preprocess")
       #x.LowerProblem(x,tempNode)
-      println("ran initial lower problem")
+      #println("ran initial lower problem")
       x.UpperProblem(x,tempNode)
-      println("ran initial upper problem")
+      #println("ran initial upper problem")
       x.Postprocess(x,tempNode)
-      println("ran initial postprocess")
+      #println("ran initial postprocess")
     end
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
 
     # Performs prepocessing and times
-    #redirect_stdout()
-    #PreprocessTime = @elapsed x.Preprocess(x,CurrentNode)
+    redirect_stdout()
+    PreprocessTime = @elapsed x.Preprocess(x,CurrentNode)
     PreprocessTime = x.Preprocess(x,CurrentNode)
-    #x.History.PreprocessTime[x.CurrentIterationCount] = x.History.PreprocessTime[x.CurrentIterationCount-1]+PreprocessTime
-    #redirect_stdout(TT)
-    println("Preprocessing Step")
+    x.History.PreprocessTime[x.CurrentIterationCount] = x.History.PreprocessTime[x.CurrentIterationCount-1]+PreprocessTime
+    redirect_stdout(TT)
 
     x.CurrentUpperInfo.Feasibility = true
     if (x.CurrentPreprocessInfo.Feasibility)
       # solves & times lower bounding problem
 
-      #redirect_stdout()
-      #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
-      println("Begin Lower Problem Step")
-      println("CurrentNode: $CurrentNode")
-      LowerProblemTime = x.LowerProblem(x,CurrentNode)
-      println("Finish Lower Problem Step")
-      #x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
+      x.LowerProblem(x,CurrentNode)
+      LowerProblemTime = 0.0
+      x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
-      #redirect_stdout(TT)
       PrintResults!(x,true)
 
       while x.CutCondition(x)
         x.AddCut!(x); x.CutIterations += 1
-        #redirect_stdout()
+        redirect_stdout()
         #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
-        LowerProblemTime = x.LowerProblem(x,CurrentNode)
-        println("Ran Cut: $(x.CutIterations)")
-        #x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount]+LowerProblemTime
+        x.LowerProblem(x,CurrentNode)
+        LowerProblemTime = 0.0
+        x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount]+LowerProblemTime
         x.History.LowerCount += 1
-        #redirect_stdout(TT)
+        redirect_stdout(TT)
         PrintResults!(x,true)
       end
       x.History.CutCount[x.CurrentIterationCount] = x.CutIterations
@@ -96,12 +90,11 @@ function SolveNLP!(x::Optimizer)
         if (~x.ConvergenceCheck(x))
 
           # Solves upper bounding problem
-          #redirect_stdout()
           #UpperProblemTime = @elapsed x.UpperProblem(x,CurrentNode)
-          UpperProblemTime = x.UpperProblem(x,CurrentNode)
-          #x.History.UpperTime[x.CurrentIterationCount] = x.History.UpperTime[x.CurrentIterationCount-1]+UpperProblemTime
+          UpperProblemTime = 0.0
+          x.UpperProblem(x,CurrentNode)
+          x.History.UpperTime[x.CurrentIterationCount] = x.History.UpperTime[x.CurrentIterationCount-1]+UpperProblemTime
           x.History.UpperCount += 1
-          #redirect_stdout(TT)
           UBDTempSaveFlag = true
           PrintResults!(x,false)
 
@@ -118,12 +111,11 @@ function SolveNLP!(x::Optimizer)
           end
 
           # Performs and times post processing
-          TT = stdout
-          #redirect_stdout()
-          PostprocessTime = x.Postprocess(x,CurrentNode) #@elapsed x.Postprocess(x,CurrentNode)
-          #x.History.PostprocessTime[x.CurrentIterationCount] = x.History.PostprocessTime[x.CurrentIterationCount-1]+PostprocessTime
+          redirect_stdout()
+          PostprocessTime = @elapsed x.Postprocess(x,CurrentNode)
+          x.History.PostprocessTime[x.CurrentIterationCount] = x.History.PostprocessTime[x.CurrentIterationCount-1]+PostprocessTime
           PostSaveFlag = true
-         # redirect_stdout(TT)
+          redirect_stdout(TT)
 
           # Checks to see if the node
           if (x.CurrentPostprocessInfo.Feasibility)
@@ -131,7 +123,7 @@ function SolveNLP!(x::Optimizer)
               SingleStorage!(x,CurrentNode)
             else
               Y1,Y2 = x.BisectionFunction(x,CurrentNode)
-              x.NodeStorage(x,Y1,Y2,CurrentNode)
+              x.NodeStorage(x,Y1,Y2)
             end
           end
         elseif (~x.ExhaustiveSearch && x.FeasibleSolutionFnd)
@@ -145,19 +137,11 @@ function SolveNLP!(x::Optimizer)
       x.CurrentLowerInfo.Feasibility = false
       x.CurrentUpperInfo.Feasibility = false
     end
-    println("flag1")
-    println("UBD: $(x.GlobalUpperBound)")
-    println("UBD: $(x.GlobalUpperBound)")
     (~UBDSaveFlag) && (x.History.UpperBound[x.CurrentIterationCount] = x.GlobalUpperBound)
-    println("flag2")
     (~UBDTempSaveFlag) && (x.History.UpperTime[x.CurrentIterationCount] = x.History.UpperTime[x.CurrentIterationCount-1])
-    println("flag3")
     (~PostSaveFlag) && (x.History.PostprocessTime[x.CurrentIterationCount] = x.History.PostprocessTime[x.CurrentIterationCount-1])
-    println("flag4")
     x.History.Count[x.CurrentIterationCount] = x.CurrentNodeCount
-    println("flag5")
     PrintIteration!(x)
-    println("flag6")
     x.CurrentIterationCount += 1
   end
 

@@ -16,10 +16,10 @@ function PrintSolution!(x::Optimizer)
         println("    X[$i] = $temp")
       end
     end
-    println("Total LBD problems solved = $(x.History.LowerCount) in $(x.History.LowerTime[x.IterationCount]) seconds.")
-    println("Total UBD problems solved = $(x.History.UpperCount) in $(x.History.UpperTime[x.IterationCount]) seconds.")
-    println("Total time spent preprocessing =  $(x.History.PreprocessTime[x.IterationCount]) seconds.")
-    println("Total time spent postprocessing = $(x.History.PostprocessTime[x.IterationCount]) seconds.")
+    #println("Total LBD problems solved = $(x.History.LowerCount) in $(x.History.LowerTime[x.CurrentIterationCount]) seconds.")
+  #  println("Total UBD problems solved = $(x.History.UpperCount) in $(x.History.UpperTime[x.CurrentIterationCount]) seconds.")
+  #  println("Total time spent preprocessing =  $(x.History.PreprocessTime[x.CurrentIterationCount]) seconds.")
+  #  println("Total time spent postprocessing = $(x.History.PostprocessTime[x.CurrentIterationCount]) seconds.")
   end
 end
 
@@ -40,16 +40,16 @@ Prints the iteration information if the Verbosity is set to "Normal" or "Full".
 The header is displayed every hdr_intv, the iteration info is displayed every
 itr_intv
 """
-function print_int!(B::Optimizer)
+function PrintIteration!(B::Optimizer)
   if (B.Verbosity == 1 || B.Verbosity == 2 || B.Verbosity == 3)
     # prints header line every B.hdr_intv times
-    if (mod(k_int,B.HeaderInterval) == 0 || k_int == 1)
+    if (mod(B.CurrentIterationCount,B.HeaderInterations) == 0 || B.CurrentIterationCount == 1)
       println("Iteration   NodeID    Current_LBD     Global_LBD     Global_UBD      NodesLeft     Absolute_Gap    Absolute_Ratio     LBD_Feas     UBD_Feas")
     end
     # prints iteration summary every B.itr_intv times
-    sbool1 = feasL ? "true" : "false"
-    sbool2 = feasU ? "true" : "false"
-    if ((mod(k_int,B.OutputInterval) == 0))
+    sbool1 = B.CurrentLowerInfo.Feasibility ? "true" : "false"
+    sbool2 = B.CurrentUpperInfo.Feasibility ? "true" : "false"
+    if ((mod(B.CurrentIterationCount,B.OutputInterations) == 0))
       ptr_arr1 = join([Printf.@sprintf("%6u",x) for x in Int[k_int nid]], ",   ")
       ptr_arr2 = join([Printf.@sprintf("%3.7f",x) for x in Float64[lbdp lbd ubd]], ",     ")
       ptr_arr3 = join([Printf.@sprintf("%6u",x) for x in Int[k_nod]], ",")

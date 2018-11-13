@@ -11,9 +11,10 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
         Update_VariableBounds_Upper!(x,y,x.WorkingUpperOptimizer)
 
         # Optimizes the object
-        #tt = stdout
-        #redirect_stdout()
+        TT = stdout
+        redirect_stdout()
         MOI.optimize!(x.WorkingUpperOptimizer)
+        redirect_stdout(TT)
         #redirect_stdout(tt)
         x.Debug = x.WorkingUpperOptimizer
         #return x.WorkingUpperOptimizer

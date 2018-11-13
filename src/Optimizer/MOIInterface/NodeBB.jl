@@ -42,14 +42,14 @@ mutable struct NodeHistory
     CutCount::Dict{Int,Int}              # Iteration --> Number of Cuts Used
     Count::Dict{Int,Int}                  # Interation --> Number of Nodes
 end
-NodeHistory() = NodeHistory(0,0,Dict{Int,Float64}(),
-                                Dict{Int,Float64}(),
-                                Dict{Int,Float64}(),
-                                Dict{Int,Float64}(),
-                                Dict{Int,Float64}(),
-                                Dict{Int,Float64}(),
-                                Dict{Int,Int}(),
-                                Dict{Int,Int}())
+NodeHistory() = NodeHistory(0,0,Dict{Int,Float64}(0 => -Inf),
+                                Dict{Int,Float64}(0 => Inf),
+                                Dict{Int,Float64}(0 => 0.0),
+                                Dict{Int,Float64}(0 => 0.0),
+                                Dict{Int,Float64}(0 => 0.0),
+                                Dict{Int,Float64}(0 => 0.0),
+                                Dict{Int,Int}(0 => 0),
+                                Dict{Int,Int}(0 => 0))
 
 function copy(x::NodeBB)
     return NodeBB(x.LowerVar, x.UpperVar, x.LowerBound, x.UpperBound, x.Depth, x.LastBranch, x.DirBranch)
