@@ -1,20 +1,20 @@
 """
-    Affine_Exp!(x::Vector{SMCg{N,T}},p::Vector{SMCg{N,T}},p_ref::Vector{SMCg{N,T}},
-               xa::Vector{SMCg{N,T}},xA::Vector{SMCg{N,T}},z::Vector{SMCg{N,T}},
+    Affine_Exp!(x::Vector{MC{N}},p::Vector{MC{N}},p_ref::Vector{MC{N}},
+               xa::Vector{MC{N}},xA::Vector{MC{N}},z::Vector{MC{N}},
                opt::Array{Any})
 
 Computates the affine relaxations of the state variable. Inputs are:
-* `x::Vector{SMCg{N,T}}`: State variable relaxation
-* `p::Vector{SMCg{N,T}}`: Decision variable relaxation
-* `p_ref::Vector{SMCg{N,T}}`: Reference variable relaxation
-* `xa::Vector{SMCg{N,T}}`: Lower affine relaxation of the state variable
-* `xA::Vector{SMCg{N,T}}`: Upper affine relaxation of the state variable
-* `z::Vector{SMCg{N,T}}`: Affine function in `X`
+* `x::Vector{MC{N,T}}`: State variable relaxation
+* `p::Vector{MC{N,T}}`: Decision variable relaxation
+* `p_ref::Vector{MC{N,T}}`: Reference variable relaxation
+* `xa::Vector{MC{N,T}}`: Lower affine relaxation of the state variable
+* `xA::Vector{MC{N,T}}`: Upper affine relaxation of the state variable
+* `z::Vector{MC{N,T}}`: Affine function in `X`
 * `opt::Array{Any,1}`: `[np,nx,lambda]` values for relaxation
 Returns the tuple `(xa,xA,z)`:
-* `xa::Vector{SMCg{N,T}}`: Lower affine relaxation of the state variable
-* `xA::Vector{SMCg{N,T}}`: Upper affine relaxation of the state variable
-* `z::Vector{SMCg{N,T}}`: Affine function in X
+* `xa::Vector{MC{N,T}}`: Lower affine relaxation of the state variable
+* `xA::Vector{MC{N,T}}`: Upper affine relaxation of the state variable
+* `z::Vector{MC{N,T}}`: Affine function in X
 --------------------------------------------------------------------------------
 """
 function Affine_Exp!(x::Vector{MC{N}}, p::Vector{MC{N}},
@@ -32,7 +32,7 @@ function Affine_Exp!(x::Vector{MC{N}}, p::Vector{MC{N}},
    for j = 1:N
       S1 = S1 + (p[j]-p_ref[j])*x[i].cv_grad[j]
       S2 = S2 + (p[j]-p_ref[j])*x[i].cc_grad[j]
-      S3 = S3 + (lambda*x[i].cv_grad[j]+(one(T)-lambda)*x[i].cc_grad[j])*(p[j]-p_ref[j])
+      S3 = S3 + (lambda*x[i].cv_grad[j]+(1.0-lambda)*x[i].cc_grad[j])*(p[j]-p_ref[j])
    end
    temp1 = x[i].cv + S1
    temp2 = x[i].cc + S2

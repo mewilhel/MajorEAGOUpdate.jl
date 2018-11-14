@@ -9,30 +9,30 @@ Relaxes the implicit function determined by `h(x,p)` with `x` in `X` and `p` in
 generated from the relaxation at `pmid` are `param` and the basic parameters of the
 fixed point method are `mc_opt`.
 """
-function MC_impRelax(h::Function, hj::Function, p::Vector{MC{N}}, pmid::Vector{T},
-                     X::Vector{V}, P::Vector{V},
-                     mc_opts::mc_opts{T},param::Vector{Vector{SMCg{N,V,T}}}) where {N,V,T<:AbstractFloat}
+function MC_impRelax(h::Function, hj::Function, p::Vector{MC{N}}, pmid::Vector{Float64},
+                     X::Vector{IntervalType}, P::Vector{IntervalType},
+                     mc_opts::mc_opts,param::Vector{Vector{MC{N}}}) where N
 
-    nx::Int64 = mc_opts.nx
-    np::Int64 = mc_opts.np
-    szero::SVector{np,T} = zeros(SVector{np,T})
-    sone::SVector{np,T} = ones(SVector{np,T})
+    nx::Int = mc_opts.nx
+    np::Int = mc_opts.np
+    szero::SVector{np,Float64} = zeros(SVector{np,Float64})
+    sone::SVector{np,Float64} = ones(SVector{np,Float64})
 
-    x_mc::Vector{SMCg{np,V,T}} = [SMCg{np,V,T}(X[i].hi,X[i].lo,szero,szero,V(X[i].lo,X[i].hi),true) for i=1:nx]
-    xa_mc::Vector{SMCg{np,V,T}} = [SMCg{np,V,T}(X[i].lo,X[i].lo,szero,szero,V(X[i].lo,X[i].lo),true) for i=1:nx]
-    xA_mc::Vector{SMCg{np,V,T}} = [SMCg{np,V,T}(X[i].hi,X[i].hi,szero,szero,V(X[i].hi,X[i].hi),true) for i=1:nx]
-    z_mc::Vector{SMCg{np,V,T}} = mc_opts.lambda*xa_mc+(one(T)-mc_opts.lambda)*xA_mc
+    x_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].lo,szero,szero,IntervalType(X[i].lo,X[i].hi),true) for i=1:nx]
+    xa_mc::Vector{MC{np}} = [MC{np}(X[i].lo,X[i].lo,szero,szero,IntervalType(X[i].lo,X[i].lo),true) for i=1:nx]
+    xA_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].hi,szero,szero,IntervalType(X[i].hi,X[i].hi),true) for i=1:nx]
+    z_mc::Vector{MC{np}} = mc_opts.lambda*xa_mc+(1.0-mc_opts.lambda)*xA_mc
 
-    p_mc::Vector{SMCg{np,V,T}} = copy(p)
-    pref_mc::Vector{SMCg{np,V,T}} = [SMCg{np,V,T}(pmid[i],pmid[i],sone,sone,V(P[i].lo,P[i].hi),false) for i=1:np]
-    aff_mc::Vector{SMCg{np,V,T}} = [SMCg{np,V,Float64}(xA_mc[i].cc,xa_mc[i].cv,szero,szero,V(xa_mc[i].cv,xA_mc[i].cc),false) for i=1:nx]
+    p_mc::Vector{MC{np}} = copy(p)
+    pref_mc::Vector{MC{np}} = [MC{np}(pmid[i],pmid[i],IntervalType(P[i].lo,P[i].hi),sone,sone,false) for i=1:np]
+    aff_mc::Vector{MC{np}} = [MC{np}(xa_mc[i].cv,xA_mc[i].cc,IntervalType(xa_mc[i].cv,xA_mc[i].cc),szero,szero,false) for i=1:nx]
 
     # Begins loop to generate parameters
     for k=1:mc_opts.kmax
       Affine_Exp!(param[k],p_mc,pref_mc,xa_mc,xA_mc,z_mc,mc_opts)
-      aff_mc = SMCg{np,V,Float64}[SMCg{np,V,Float64}(x_mc[i].cc,x_mc[i].cv,szero,szero,
-                     V(x_mc[i].cv,x_mc[i].cc),false) for i=1:nx]
-      PSMCg_Kernel!(h,hj,z_mc,aff_mc,p_mc,x_mc,mc_opts)
+      aff_mc = MC{np}[MC{np}(x_mc[i].cv,x_mc[i].cc,IntervalType(x_mc[i].cv,x_mc[i].cc),
+                             szero,szero,false) for i=1:nx]
+      PMC_Kernel!(h,hj,z_mc,aff_mc,p_mc,x_mc,mc_opts)
 
     end
     return x_mc
