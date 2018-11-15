@@ -18,9 +18,9 @@ function MC_impRelax(h::Function, hj::Function, p::Vector{MC{N}}, pmid::Vector{F
     szero::SVector{np,Float64} = zeros(SVector{np,Float64})
     sone::SVector{np,Float64} = ones(SVector{np,Float64})
 
-    x_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].lo,szero,szero,IntervalType(X[i].lo,X[i].hi),true) for i=1:nx]
-    xa_mc::Vector{MC{np}} = [MC{np}(X[i].lo,X[i].lo,szero,szero,IntervalType(X[i].lo,X[i].lo),true) for i=1:nx]
-    xA_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].hi,szero,szero,IntervalType(X[i].hi,X[i].hi),true) for i=1:nx]
+    x_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].lo,IntervalType(X[i].lo,X[i].hi),szero,szero,true) for i=1:nx]
+    xa_mc::Vector{MC{np}} = [MC{np}(X[i].lo,X[i].lo,IntervalType(X[i].lo,X[i].lo),szero,szero,true) for i=1:nx]
+    xA_mc::Vector{MC{np}} = [MC{np}(X[i].hi,X[i].hi,IntervalType(X[i].hi,X[i].hi),szero,szero,true) for i=1:nx]
     z_mc::Vector{MC{np}} = mc_opts.lambda*xa_mc+(1.0-mc_opts.lambda)*xA_mc
 
     p_mc::Vector{MC{np}} = copy(p)

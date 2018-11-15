@@ -38,6 +38,8 @@ export grad, zgrad, ∩, mid3, MC_param, mid_grad, seed_g, line_seg, dline_seg,
        set_outer_rnd, tighten_subgrad, set_iterations, set_tolerance,
        default_options, value, mincv, maxcc, promote_rule
 =#
+export mc_opts, GenExpansionParams, MC_impRelax, impRelax_f,
+       MC_impRelax, impRelax_f, impRelax_fg
 
 include("ConvexityRules/ConvexityRules.jl")
 
@@ -53,5 +55,7 @@ include("Utilities/RootFinding.jl")
 include("OperatorLibrary/ForwardOperators/Forward.jl")
 #include("OperatorLibrary/ReverseOperators/Reverse.jl")
 #include("OperatorLibrary/Inplace.jl")
+
+include("ImplicitRoutines/Implicit.jl")
 
 end

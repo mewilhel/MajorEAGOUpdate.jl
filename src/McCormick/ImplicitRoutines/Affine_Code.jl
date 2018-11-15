@@ -20,7 +20,7 @@ Returns the tuple `(xa,xA,z)`:
 function Affine_Exp!(x::Vector{MC{N}}, p::Vector{MC{N}},
                      p_ref::Vector{MC{N}}, xa::Vector{MC{N}},
                      xA::Vector{MC{N}}, z::Vector{MC{N}},
-                     mc_opts::mc_opts{Float64}) where N
+                     mc_opts::mc_opts) where N
 
   nx = mc_opts.nx
   lambda = mc_opts.lambda

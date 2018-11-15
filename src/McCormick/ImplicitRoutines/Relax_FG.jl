@@ -14,7 +14,7 @@ function impRelax_f(f::Function,h::Function,hj::Function,X::Vector{IntervalType}
                     mc_opt::mc_opts,param::Vector{Vector{MC{N}}}) where N
   np::Int = length(P)
   sone::SVector{np,Float64} = ones(SVector{np,Float64})
-  p_mc::Vector{MC{np}} = [MC{np}(p[i],p[i],sone,sone,IntervalType(P[i].lo,P[i].hi),false) for i=1:np]
+  p_mc::Vector{MC{np}} = [MC{np}(p[i],p[i],IntervalType(P[i].lo,P[i].hi),sone,sone,false) for i=1:np]
   xpMC::Vector{MC{np}} = MC_impRelax(h,hj,p_mc,pmid,X,P,mc_opt,param)
   return f(xpMC,p_mc)
 end
@@ -35,9 +35,9 @@ function impRelax_fg(f::Function,g::Function,h::Function,hj::Function,
                      X::Vector{IntervalType},P::Vector{IntervalType},
                      p::Vector{Float64},pmid::Vector{Float64},
                      mc_opt::mc_opts,param::Vector{Vector{MC{N}}}) where N
-  np::Int64 = length(P)
+  np::Int = length(P)
   sone::SVector{np,Float64} = ones(SVector{np,Float64})
-  p_mc::Vector{MC{np}} = [MC{np}(p[i],p[i],sone,sone,IntervalType(P[i].lo,P[i].hi),false) for i=1:np]
+  p_mc::Vector{MC{np}} = [MC{np}(p[i],p[i],IntervalType(P[i].lo,P[i].hi),sone,sone,false) for i=1:np]
   xpMC::Vector{MC{np}} = MC_impRelax(h,hj,p_mc,pmid,X,P,mc_opt,param)
   return f(xpMC,p_mc),g(xpMC,p_mc)
 end

@@ -1,6 +1,6 @@
 function MC_Dense_Newton_GS!(z_mc::Vector{MC{N}},x_mc::Vector{MC{N}},
                         YdH_mc::VecOrMat{MC{N}},YH_mc::Vector{MC{N}},
-                        mc_opts::mc_opts{Float64}) where N
+                        mc_opts::mc_opts) where N
     S1::MC{N} = zero(x_mc[1])
     x_mc_int::Vector{MC{N}} = copy(x_mc)
     for i=1:mc_opts.nx
