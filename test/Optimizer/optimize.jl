@@ -1,4 +1,4 @@
-
+#=
 # Test LP #1 (Passed 1)
 println("----- Test Example 1 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -71,7 +71,7 @@ backend3pstatus = m.moi_backend.model.optimizer.primal_status
 backend3dstatus = m.moi_backend.model.optimizer.dual_status
 =#
 debug3 = m.moi_backend.model.optimizer.Debug
-
+=#
 # Test LP #4
 println("----- Test Example 4 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -89,6 +89,7 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @NLconstraint(m, y >= 4)
 @NLconstraint(m, q-3*z-y >= 0)
 
+
 JuMP.optimize!(m)
 #=
 backend4sol = m.moi_backend.model.optimizer.variable_primal_solution
@@ -96,9 +97,9 @@ backend4term = m.moi_backend.model.optimizer.termination_status
 backend4pstatus = m.moi_backend.model.optimizer.primal_status
 backend4dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug4 = m.moi_backend.model.optimizer.Debug
-
-
+debug4a = m.moi_backend.model.optimizer.Debug1
+debug4b = m.moi_backend.model.optimizer.Debug2
+#=
 # Test NLP #5
 println("----- Test Example 5 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -234,6 +235,7 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @constraint(m, y >= 0)
 
 JuMP.optimize!(m)
+=#
 #=
 backend10sol = m.moi_backend.model.optimizer.variable_primal_solution
 backend10term = m.moi_backend.model.optimizer.termination_status

@@ -28,6 +28,7 @@ function EAGODefault_PreProcess!(x::Optimizer,y::NodeBB)
     end
     =#
 
+    #=
     rept = 0
     if x.OBBTActiveCurrent
         if x.InitialOBBTOptimizer != DummyOptimizer()
@@ -35,6 +36,7 @@ function EAGODefault_PreProcess!(x::Optimizer,y::NodeBB)
         end
         RelaxModel!(x,y,x.WorkingOBBTOptimizer)
     end
+    =#
     #=
     while x.OBBTActiveCurrent
         (x.OBBTRepts > rept) && (x.OBBTActiveCurrent = false)

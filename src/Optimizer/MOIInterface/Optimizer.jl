@@ -186,13 +186,15 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     FirstRelaxed::Bool
 
     # Debug
-    Debug::Any
+    Debug1::Any
+    Debug2::Any
 
     function Optimizer(;options...)
 
         m = new()
 
-        m.Debug = []
+        m.Debug1 = []
+        m.Debug2 = []
         m.InputModel = 0
         m.IntegerVar = Int[]
         m.VariableInfo = VariableInfo[]

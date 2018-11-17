@@ -58,17 +58,25 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
 
         for (j,bns) in enumerate(src.WorkingEvaluatorBlock.constraint_bounds)
             if bns.upper < Inf
+                println("upper bound")
                 constant = g[j]
                 for i in 1:ngrad
                     constant -= midx[i]*dg[j,i]
                 end
+                println("var: $var")
+                println("coeff: $(dg[j,:])")
+                println("b: $(bns.upper-constant)")
                 MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(dg[j,:], var), 0.0), MOI.LessThan(bns.upper-constant))
             end
+            println("lower bound")
             if bns.lower > -Inf
                 constant = -g_cc[j]
                 for i in 1:ngrad
                     constant = midx[i]*dg_cc[j,i]
                 end
+                println("var: $var")
+                println("coeff: $(-dg_cc[j,:])")
+                println("b: $(-bns.lower-constant)")
                 MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(-dg_cc[j,:], var), 0.0), MOI.LessThan(-bns.lower-constant))
             end
         end

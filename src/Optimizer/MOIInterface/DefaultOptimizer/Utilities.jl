@@ -41,26 +41,26 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
     # Updates variables bounds
     typevar = m.UpperVariables
     for (i,var) in enumerate(m.VariableInfo)
-        println("i: $i")
-        println("var: $var")
+        #println("i: $i")
+        #println("var: $var")
         var_xi = MOI.SingleVariable(typevar[i])
-        println("var_xi: $var_xi")
+        #println("var_xi: $var_xi")
         if var.is_integer
         else
             if var.is_fixed
-                println("ran fixed")
+                #println("ran fixed")
                 MOI.add_constraint(z, var_xi, MOI.EqualTo(y.LowerVar[i]))
             elseif var.has_lower_bound
                 if var.has_upper_bound
-                    println("has both bounds")
+                    #println("has both bounds")
                     MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
                     MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 else
-                    println("has lower bound only")
+                    #println("has lower bound only")
                     MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 end
             elseif var.has_upper_bound
-                println("has upper bound only")
+                #println("has upper bound only")
                 MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
             end
         end
@@ -69,7 +69,7 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
 end
 
 function SetLocalNLP!(m::Optimizer)
-    println("ran set local nlp")
+    #println("ran set local nlp")
     #m.WorkingUpperOptimizer = deepcopy(m.NLPOptimizer)
 
     # Add variables to model
