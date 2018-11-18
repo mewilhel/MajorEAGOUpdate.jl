@@ -10,6 +10,8 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
         src.WorkingEvaluatorBlock = src.NLPData
         Built_Evaluator = Build_NLP_Evaluator(MC{src.VariableNumber},src.NLPData.evaluator,src)
         if (typeof(src.NLPData.evaluator) != MajorEAGOUpdate.EmptyNLPEvaluator)
+            #println("constraint bounds at load: $(src.NLPData.constraint_bounds)")
+            #println("nlp data at load: $(src.NLPData)")
             src.WorkingEvaluatorBlock = MOI.NLPBlockData(src.NLPData.constraint_bounds,
                                                          Built_Evaluator,
                                                          src.NLPData.has_objective)

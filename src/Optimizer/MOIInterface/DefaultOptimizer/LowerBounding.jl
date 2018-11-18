@@ -30,11 +30,12 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     if x.InitialRelaxedOptimizer != DummyOptimizer()
         #MOI.copy_to(x.WorkingRelaxedOptimizer,x.InitialRelaxedOptimizer)
         x.WorkingRelaxedOptimizer = deepcopy(x.InitialRelaxedOptimizer)
+        x.Debug1 = x.InitialRelaxedOptimizer
         #println("copied initial relaxed solver")
     end
 
     Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
-    #println("fixed lower variable bounds")
+    println("fixed lower variable bounds")
 
     RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
     #println("model was relaxed")
@@ -42,7 +43,7 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
-    x.Debug1 = x.WorkingRelaxedOptimizer
+    x.Debug2 = x.WorkingRelaxedOptimizer
     MOI.optimize!(x.WorkingRelaxedOptimizer)
     #return x.WorkingRelaxedOptimizer               # CHANGE ME
     #redirect_stdout(tt)

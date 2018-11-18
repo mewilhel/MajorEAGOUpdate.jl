@@ -55,5 +55,9 @@ function DefaultConvergenceCheck(x::Optimizer)
   U = x.CurrentUpperInfo.Value
   t1 = (U - L) <= x.AbsoluteTolerance
   t2 = (abs(U - L)/(min(abs(L),abs(U))) <= x.RelativeTolerance)
+  println("L: $L")
+  println("U: $U")
+  println("t1: $t1")
+  println("t2: $t2")
   return t1 || t2
 end

@@ -9,7 +9,7 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
 
         # Updates variables bounds
         Update_VariableBounds_Upper!(x,y,x.WorkingUpperOptimizer)
-
+        println("fixed upper variables")
         x.Debug2 = x.WorkingUpperOptimizer
         # Optimizes the object
         TT = stdout

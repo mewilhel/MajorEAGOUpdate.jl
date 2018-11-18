@@ -40,21 +40,23 @@ Prints the iteration information if the Verbosity is set to "Normal" or "Full".
 The header is displayed every hdr_intv, the iteration info is displayed every
 itr_intv
 """
-function PrintIteration!(B::Optimizer)
-  if (B.Verbosity == 1 || B.Verbosity == 2 || B.Verbosity == 3)
+function PrintIteration!(x::Optimizer)
+  if (x.Verbosity == 1 || x.Verbosity == 2 || x.Verbosity == 3)
     # prints header line every B.hdr_intv times
-    if (mod(B.CurrentIterationCount,B.HeaderInterations) == 0 || B.CurrentIterationCount == 1)
+    if (mod(x.CurrentIterationCount,x.HeaderInterations) == 0 || x.CurrentIterationCount == 1)
       println("Iteration   NodeID    Current_LBD     Global_LBD     Global_UBD      NodesLeft     Absolute_Gap    Absolute_Ratio     LBD_Feas     UBD_Feas")
     end
     # prints iteration summary every B.itr_intv times
-    sbool1 = B.CurrentLowerInfo.Feasibility ? "true" : "false"
-    sbool2 = B.CurrentUpperInfo.Feasibility ? "true" : "false"
-    if ((mod(B.CurrentIterationCount,B.OutputInterations) == 0))
-      ptr_arr1 = join([Printf.@sprintf("%6u",x) for x in Int[k_int nid]], ",   ")
-      ptr_arr2 = join([Printf.@sprintf("%3.7f",x) for x in Float64[lbdp lbd ubd]], ",     ")
-      ptr_arr3 = join([Printf.@sprintf("%6u",x) for x in Int[k_nod]], ",")
-      ptr_arr4 = join([Printf.@sprintf("%3.7f",x) for x in Float64[abs(ubd-lbd) abs(ubd-lbd)/(min(abs(lbd),abs(ubd)))]], ",       ")
-      ptr_arr5 = join([Printf.@sprintf("%s",x) for x in Bool[sbool1 sbool2]], ",       ")
+    sbool1 = x.CurrentLowerInfo.Feasibility ? "true" : "false"
+    sbool2 = x.CurrentUpperInfo.Feasibility ? "true" : "false"
+    nid = x.GlobalUpperBound
+    lbdp = x.CurrentLowerInfo.Feasibility ? x.CurrentLowerInfo.Value : Inf
+    if ((mod(x.CurrentIterationCount,x.OutputInterations) == 0))
+      ptr_arr1 = join([Printf.@sprintf("%6u",x) for x in Int[x.CurrentIterationCount x.CurrentNodeCount]], ",   ")
+      ptr_arr2 = join([Printf.@sprintf("%3.7f",x) for x in Float64[lbdp x.GlobalLowerBound x.GlobalUpperBound]], ",     ")
+      ptr_arr3 = join([Printf.@sprintf("%6u",x) for x in Int[x.CurrentNodeCount]], ",")
+      ptr_arr4 = join([Printf.@sprintf("%3.7f",x) for x in Float64[abs(x.GlobalUpperBound-x.GlobalLowerBound) abs(x.GlobalUpperBound-x.GlobalLowerBound)/(min(abs(x.GlobalLowerBound),abs(x.GlobalUpperBound)))]], ",       ")
+      ptr_arr5 = join([Printf.@sprintf("%s",x) for x in String[sbool1 sbool2]], ",       ")
 #      ptr_arr1 = join([@sprintf("%6u",x) for x in Int[k_int nid]], ",   ")
 #      ptr_arr2 = join([@sprintf("%3.7f",x) for x in Float64[lbdp lbd ubd]], ",     ")
 #      ptr_arr3 = join([@sprintf("%6u",x) for x in Int[k_nod]], ",")

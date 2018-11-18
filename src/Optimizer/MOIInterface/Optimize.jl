@@ -28,6 +28,7 @@ function MOI.optimize!(m::Optimizer)
         end
     end
 
+    #println("optimize nlp constraint bounds: $(m.NLPData.constraint_bounds)")
     # Get various other sizes
     num_nlp_constraints = length(m.NLPData.constraint_bounds)
 

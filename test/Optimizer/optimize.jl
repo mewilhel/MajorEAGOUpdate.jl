@@ -20,7 +20,7 @@ backend1term = m.moi_backend.model.optimizer.termination_status
 backend1pstatus = m.moi_backend.model.optimizer.primal_status
 backend1dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug1 = m.moi_backend.model.optimizer.Debug
+debug1 = m.moi_backend.model.optimizer.Debug1
 
 # Test LP #2
 println("----- Test Example 2 -----")
@@ -44,7 +44,7 @@ backend2term = m.moi_backend.model.optimizer.termination_status
 backend2pstatus = m.moi_backend.model.optimizer.primal_status
 backend2dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug2 = m.moi_backend.model.optimizer.Debug
+debug2 = m.moi_backend.model.optimizer.Debug1
 
 # Test LP #3
 println("----- Test Example 3 -----")
@@ -70,8 +70,9 @@ backend3term = m.moi_backend.model.optimizer.termination_status
 backend3pstatus = m.moi_backend.model.optimizer.primal_status
 backend3dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug3 = m.moi_backend.model.optimizer.Debug
-=#
+debug3 = m.moi_backend.model.optimizer.Debug1
+
+
 # Test LP #4
 println("----- Test Example 4 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -99,23 +100,22 @@ backend4dstatus = m.moi_backend.model.optimizer.dual_status
 =#
 debug4a = m.moi_backend.model.optimizer.Debug1
 debug4b = m.moi_backend.model.optimizer.Debug2
-#=
+=#
+
 # Test NLP #5
 println("----- Test Example 5 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
 #m = Model(with_optimizer(Clp.Optimizer))
 
-@variable(m, 2 <= x <= 7)
-@variable(m, -2 <= y <= 2)
-@variable(m, 1 <= z <= 3)
-
-@NLobjective(m, Min, 2sqrt(x) - 3exp(z))
-
+@variable(m, 2 <= x <= 4)
+@variable(m, 1 <= y <= 2)
+@NLobjective(m, Min, 2sqrt(x) + 3sqrt(y))
+#=
 @NLconstraint(m, exp(z) >= -10)
 @NLconstraint(m, sqrt(x) <= 2)
 @NLconstraint(m, x*y >= 4)
 @NLconstraint(m, 2sqrt(x) - 3exp(z) + x*y >= 0)
-
+=#
 JuMP.optimize!(m)
 #=
 backend5sol = m.moi_backend.model.optimizer.variable_primal_solution
@@ -123,9 +123,9 @@ backend5term = m.moi_backend.model.optimizer.termination_status
 backend5pstatus = m.moi_backend.model.optimizer.primal_status
 backend5dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug5 = m.moi_backend.model.optimizer.Debug
+debug5 = m.moi_backend.model.optimizer.Debug1
 
-
+#=
 # Test NLP #6
 println("----- Test Example 6 -----")
 m = Model(with_optimizer(EAGO.Optimizer))
@@ -149,7 +149,7 @@ backend6term = m.moi_backend.model.optimizer.termination_status
 backend6pstatus = m.moi_backend.model.optimizer.primal_status
 backend6dstatus = m.moi_backend.model.optimizer.dual_status
 =#
-debug6 = m.moi_backend.model.optimizer.Debug
+debug6 = m.moi_backend.model.optimizer.Debug1
 #=
 # Test QP Convex #7
 println("----- Test Example 7 -----")

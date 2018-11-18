@@ -2,19 +2,20 @@ function Update_VariableBounds_Lower!(x::Optimizer,y::NodeBB,z::T) where {T<:MOI
     # Updates variables bounds
     for i=1:x.VariableNumber
         var = x.VariableInfo[i]
+
         if (~var.is_integer)
             ci1,ci2,num = x.VariableIndexLow[i]
             if var.is_fixed
-                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.EqualTo{Float64}(var.upper_bound))
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.EqualTo{Float64}(y.LowerVar[i]))
             elseif var.has_lower_bound
                 if var.has_upper_bound
-                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan{Float64}(var.upper_bound))
-                    MOI.set(z, MOI.ConstraintSet(), ci2, MOI.GreaterThan{Float64}(var.lower_bound))
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan{Float64}(y.UpperVar[i]))
+                    MOI.set(z, MOI.ConstraintSet(), ci2, MOI.GreaterThan{Float64}(y.LowerVar[i]))
                 else
-                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.GreaterThan{Float64}(var.lower_bound))
+                    MOI.set(z, MOI.ConstraintSet(), ci1, MOI.GreaterThan{Float64}(y.LowerVar[i]))
                 end
             elseif var.has_upper_bound
-                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan{Float64}(var.upper_bound))
+                MOI.set(z, MOI.ConstraintSet(), ci1, MOI.LessThan{Float64}(y.UpperVar[i]))
             end
         else
             #=
