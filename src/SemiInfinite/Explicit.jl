@@ -97,22 +97,20 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
 
     ##### inner program #####
     mLLP1 = deepcopy(SIPopt.LLP_Opt)
-    LLP1_vars = EAGO.loadscript!(mLLP1, np, 0, P_low, P_high,
-                              Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
-    MOI.optimize!(mLLP1)
+    LLP1_vars,jLLP1 = EAGO.loadscript!(mLLP1, np, 0, P_low, P_high,Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
+    JuMP.optimize!(mLLP1)
 
     # Process output info and save to CurrentUpperInfo object
-    termination_status = MOI.get(mLLP1, MOI.TerminationStatus())
-    tLLP = MOI.get(mLLP1, MOI.SolveTime())
+    termination_status = JuMP.termination_status(jLLP1)
+    tLLP = getsolvetime(jLLP1)
     if (termination_status == MOI.Success)
-        @assert MOI.get(mLLP1, MOI.ResultCount()) > 0
-        result_status = MOI.get(mLLP1, MOI.PrimalStatus())
+        result_status = JuMP.primal_status(jLLP1)
         if (result_status != MOI.FeasiblePoint)
           feas = false
         else
           feas = true
-          INNg1 = MOI.get(mLLP1, MOI.ObjectiveValue())
-          pbar = MOI.get(mLLP1, MOI.VariablePrimal(), LLP1_vars)
+          INNg1 = getobjectivevalue(jLLP1)
+          pbar = getvalue(x), LLP1_vars)
         end
     else
       error("Optimizer did not successfully terminate")

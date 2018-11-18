@@ -1,4 +1,4 @@
-function Explicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPopt::SIP_opts)
+function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPopt::SIP_opts)
 
   # initializes solution
   UBDg::Float64 = Inf
@@ -60,7 +60,7 @@ function Explicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
         gU_LBP = [0.0 for i=1:length(P_LBD)]
     end
     MOI.optimize!(mLBP)
-    
+
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(mLBP, MOI.TerminationStatus())
     tLBP = MOI.get(mLBP, MOI.SolveTime())
