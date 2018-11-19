@@ -11,7 +11,7 @@ function copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType}
     temp_flt = Array{Float64}(undef,length(x.nd))
     temp_bool = Array{Bool}(undef,length(x.nd))
     SubexpressionSetStorage{T}(x.nd, x.adj, x.const_values, temp_set, temp_flt,
-                               temp_bool, x.Linearity)
+                               temp_bool, x.linearity)
 end
 
 # TO DO
@@ -59,8 +59,11 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
 
         d.subexpression_values = S[]
         d.subexpressions = SubexpressionSetStorage{S}[]
+        println("typeof(d.subexpressions): $(typeof(d.subexpressions))")
         for i in 1:length(src.subexpressions)
-            push!(d.subexpressions,copy_to_subexpr(SubexpressionSetStorage{S},src.subexpressions[i]))
+            temp = copy_to_subexpr(SubexpressionSetStorage{S},src.subexpressions[i])
+            println("temp: $(temp)")
+            push!(d.subexpressions,temp)
         end
         d.subexpression_values = fill(NaN,length(d.subexpressions))
 
