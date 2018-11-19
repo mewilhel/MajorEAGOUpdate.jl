@@ -16,7 +16,7 @@ Inputs:
 * `SIPopt::SIP_opts`: Option type containing problem information
 Returns: A SIP_result composite type containing solution information.
 """
-function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
+function Explicit_SIP_Solve(f,gSIP,X_low,X_high,P_low,P_high,SIPopt::SIP_opts)
 
   # initializes solution
   UBDg = Inf
@@ -24,17 +24,17 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
   k = 0
   P_LBD = SIPopt.P_LBD
   P_UBD = SIPopt.P_UBD
-  np = length(P)
-  nx = length(X)
-  P_low = [P[i].lo for i=1:np]
-  P_high = [P[i].hi for i=1:np]
-  X_low = [X[i].lo for i=1:nx]
-  X_high = [X[i].hi for i=1:nx]
-  pbar = mid.(P)
-  xbar = mid.(X)
+  np = length(P_low)
+  nx = length(X_low)
+  pbar = P_low+(P_high - P_low)/2.0
+  xbar = X_low+(X_high - X_low)/2.0
   INNg1 = Inf
   INNg2 = Inf
   feas = true
+  LBP_vars = JuMP.VariableRef[]
+  UBP_vars = JuMP.VariableRef[]
+  LLP1_vars = JuMP.VariableRef[]
+  LLP2_vars = JuMP.VariableRef[]
 
   sip_sto = SIP_result()
 
@@ -58,25 +58,22 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
     end
 
     ##### lower bounding problem #####
-    gLBP = x -> BndProb_reform(x,nothing,gSIP,P_LBD,0.0) # reformulate constraints
     gL_LBP = [-Inf for i=1:length(P_LBD)]
     gU_LBP = [0.0 for i=1:length(P_LBD)]
-    mLBP = deepcopy(SIPopt.LBP_Opt)
-    LBP_vars = EAGO.loadscript!(mLBP, nx, length(P_LBD), X_low, X_high,gL_LBP, gU_LBP, MOI.MinSense, f, gLBP)
-    MOI.optimize!(mLBP)
+    LBP_vars, jLBP = loadscript_bnds_lbd!(SIPopt.LBP_Opt,nx, length(P_LBD), X_low, X_high,gL_LBP, gU_LBP, f, gSIP, P_LBD, LBP_vars)
+    JuMP.optimize!(jLBP)
 
     # Process output info and save to CurrentUpperInfo object
-    termination_status = MOI.get(mLBP, MOI.TerminationStatus())
-    tLBP = MOI.get(mLBP, MOI.SolveTime())
+    termination_status = JuMP.termination_status(jLBP)
+    tLBP = JuMP.getsolvetime(jLBP)
     if (termination_status == MOI.Success)
-        @assert MOI.get(mLBP, MOI.ResultCount()) > 0
-        result_status = MOI.get(mLBP, MOI.PrimalStatus())
+        result_status = JuMP.primal_status(jLBP)
         if (result_status != MOI.FeasiblePoint)
           feas = false
         else
           feas = true
-          LBDg = MOI.get(mLBP, MOI.ObjectiveValue())
-          xbar = MOI.get(mLBP, MOI.VariablePrimal(), LBP_vars)
+          LBDg = JuMP.getobjectivevalue(jLBP)
+          xbar = JuMP.getvalue.(LBP_vars)
         end
     else
       error("Optimizer did not successfully terminate")
@@ -96,21 +93,20 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
     end
 
     ##### inner program #####
-    mLLP1 = deepcopy(SIPopt.LLP_Opt)
-    LLP1_vars,jLLP1 = EAGO.loadscript!(mLLP1, np, 0, P_low, P_high,Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
-    JuMP.optimize!(mLLP1)
+    LLP1_vars,jLLP1 = loadscript_llp!(SIPopt.LLP_Opt, np, P_low, P_high, gSIP, xbar, MOI.MaxSense,1)
+    JuMP.optimize!(jLLP1)
 
     # Process output info and save to CurrentUpperInfo object
     termination_status = JuMP.termination_status(jLLP1)
-    tLLP = getsolvetime(jLLP1)
+    tLLP = JuMP.getsolvetime(jLLP1)
     if (termination_status == MOI.Success)
         result_status = JuMP.primal_status(jLLP1)
         if (result_status != MOI.FeasiblePoint)
           feas = false
         else
           feas = true
-          INNg1 = getobjectivevalue(jLLP1)
-          pbar = getvalue(x), LLP1_vars)
+          INNg1 = JuMP.getobjectivevalue(jLLP1)
+          pbar = JuMP.getvalue.(LLP1_vars)
         end
     else
       error("Optimizer did not successfully terminate")
@@ -134,27 +130,22 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
     end
 
     ##### upper bounding problem #####
-    gUBP = x -> BndProb_reform(x,nothing,gSIP,P_UBD,eps_g)
     gL_UBP = [-Inf for i=1:length(P_UBD)]
     gU_UBP = [0.0 for i=1:length(P_UBD)]
-
-    mUBP = deepcopy(SIPopt.UBP_Opt)
-    mUBP_vars = EAGO.loadscript!(mUBP, nx, length(P_UBD), X_low, X_high,
-                                 gL_UBP, gU_UBP, MOI.MinSense, f, gUBP)
-    MOI.optimize!(mUBP)
+    UBP_vars,jUBP = loadscript_bnds_ubd!(SIPopt.UBP_Opt, nx, length(P_UBD), X_low, X_high, gL_UBP, gU_UBP,  MOI.MinSense, f, gSIP, P_UBD, UBP_vars, eps_g)
+    JuMP.optimize!(jUBP)
 
     # Process output info and save to CurrentUpperInfo object
-    termination_status = MOI.get(mUBP, MOI.TerminationStatus())
-    tUBP = MOI.get(mUBP, MOI.SolveTime())
+    termination_status = JuMP.termination_status(jUBP)
+    tUBP = JuMP.getsolvetime(jUBP)
     if (termination_status == MOI.Success)
-        @assert MOI.get(mUBP, MOI.ResultCount()) > 0
-        result_status = MOI.get(mUBP, MOI.PrimalStatus())
+        result_status = JuMP.primal_status(jUBP)
         if (result_status != MOI.FeasiblePoint)
           feas = false
         else
           feas = true
-          UBD_temp = MOI.get(mUBP, MOI.ObjectiveValue())
-          xbar = MOI.get(mUBP, MOI.VariablePrimal(), mUBP_vars)
+          UBD_temp = JuMP.getobjectivevalue(jUBP)
+          xbar = JuMP.getvalue.(UBP_vars)
         end
     else
       error("Optimizer did not successfully terminate")
@@ -170,23 +161,20 @@ function Explicit_SIP_Solve(f,gSIP,X,P,SIPopt::SIP_opts)
     if (feas)
 
       ##### inner program #####
-      mLLP2 = deepcopy(SIPopt.LLP_Opt)
-      mLLP2_vars = EAGO.loadscript!(mLLP2, np, 0, P_low, P_high,
-                                   Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
-      MOI.optimize!(mLLP2)
+      LLP2_vars,jLLP2 = loadscript_llp!(SIPopt.LLP_Opt, np, P_low, P_high, gSIP, xbar, MOI.MaxSense,2)
+      JuMP.optimize!(jLLP2)
 
       # Process output info and save to CurrentUpperInfo object
-      termination_status = MOI.get(mLLP2, MOI.TerminationStatus())
-      tLLP = MOI.get(mLLP2, MOI.SolveTime())
+      termination_status = JuMP.termination_status(jLLP2)
+      tLLP = JuMP.getsolvetime(jLLP2)
       if (termination_status == MOI.Success)
-          @assert MOI.get(mLLP2, MOI.ResultCount()) > 0
-          result_status = MOI.get(mLLP2, MOI.PrimalStatus())
+          result_status = JuMP.primal_status(jLLP2)
           if (result_status != MOI.FeasiblePoint)
             feas = false
           else
             feas = true
-            INNg2 = MOI.get(mLLP2, MOI.ObjectiveValue())
-            pbar = MOI.get(mLLP2, MOI.VariablePrimal(), mLLP2_vars)
+            INNg2 = JuMP.getobjectivevalue(jLLP2)
+            pbar = JuMP.getvalue.(LLP2_vars)
           end
       else
         error("Optimizer did not successfully terminate")

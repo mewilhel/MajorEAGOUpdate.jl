@@ -12,3 +12,5 @@ const MOI = MathOptInterface
 
 include("Optimizer/optimizer.jl")
 #include("McCormick/mccormick.jl")
+#include("SemiInfinite/semiinfinite.jl")
+include("ExampleProblems/Bioreactor_ANN.jl")

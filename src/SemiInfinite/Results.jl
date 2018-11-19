@@ -16,7 +16,7 @@ UBP_time      Float64 - Time spent solving the upper bounding problem (sec)
 xbar          Array{Float64} - Solution point
 --------------------------------------------------------------------------------
 """
-type SIP_result
+mutable struct SIP_result
     k::Int
     UBD::Float64
     LBD::Float64

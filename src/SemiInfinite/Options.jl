@@ -14,7 +14,7 @@
 - gSIPExp: Expression for semi-infinite inequality constraint
 - hSIPExp: Expression for semi-infinite equality constraints
 """
-type SIP_opts
+mutable struct SIP_opts
   tol::Float64
   kmax::Int
   eps_g0::Float64
@@ -22,17 +22,19 @@ type SIP_opts
   return_hist
   hdr_intv::Int
   prnt_intv::Int
-  LLP_Opt::MOI.AbstractOptimizer
-  LBP_Opt::MOI.AbstractOptimizer
-  UBP_Opt::MOI.AbstractOptimizer
-  P_LBD::VecOfVec
-  P_UBD::VecOfVec
-  Verbosity::String
+  LLP_Opt::Any
+  LBP_Opt::Any
+  UBP_Opt::Any
+  P_LBD::Vector{Vector{Float64}}
+  P_UBD::Vector{Vector{Float64}}
+  Verbosity::Int
   inn_tol::Float64
 end
 
-SIP_opts() = SIP_opts(1E-3,100,1.0,1.5,false,20,1,EAGO.Optimizer(),EAGO.Optimizer(),EAGO.Optimizer(),[],[],[],Vector{Float64}[],Vector{Float64}[],"Normal",1.0E-4,Expr[],Expr[])
-SIP_opts(X) = SIP_opts(1E-3,100,1.0,1.5,false,20,1,X,X,X,[],[],[],Vector{Float64}[],Vector{Float64}[],"Normal",1E-4,Expr[],Expr[])
+SIP_opts() = SIP_opts(1E-3,100,1.0,1.5,false,20,1,Optimizer,Optimizer,Optimizer,
+                      Vector{Float64}[],Vector{Float64}[],0,1.0E-4)
+SIP_opts(X) = SIP_opts(1E-3,100,1.0,1.5,false,20,1,X,X,X,
+                       Vector{Float64}[],Vector{Float64}[],0,1E-4)
 
 #=
 function set_to_default!(x::SIP_opts)

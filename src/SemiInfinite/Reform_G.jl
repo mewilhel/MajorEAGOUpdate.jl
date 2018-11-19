@@ -17,7 +17,7 @@ Returns:
 An array corresponding to the output of the reformulated constraint.
 --------------------------------------------------------------------------------
 """
-function BndProb_reform(x,g::Function,gSIP::Function,Pset::VecOfVec,eps_g::Float64)
+function BndProb_reform(x,g::Function,gSIP::Function,Pset::Vector{Vector{Float64}},eps_g::Float64)
   temp = []
   if ~isempty(Pset)
     for i=1:length(Pset)
@@ -40,7 +40,7 @@ Reformulates the `h` function `h(x,y,p) = 0` into  pSet into `h(x,y*,p*) =
 [h(x,y[1:ny],pSet[1]), h(x,y[(ny+1):2*ny],pSet[2]),...,h(x,y[(ny+1)*(np-1):ny*np],
 pSet[end])]`for input into implicit global optimization routine.
 """
-function Reform_Imp_H(h::Function,x::Vector{T},y,pUBD::VecOfVec,ny::Int) where T<:Real
+function Reform_Imp_H(h::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int) where T<:Real
   h_reform = zeros(T,ny*length(pUBD))
   for i=1:length(pUBD)
     h_reform[(1+ny*(i-1)):(ny*i)] = h(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])
@@ -55,7 +55,7 @@ Reformulates the semi-infinite constraint function `g(x,y,p)` into  pSet into
 g(x,y[(ny+1)*(np-1):ny*np],pSet[end])]` for input into implicit global
 optimization routine.
 """
-function Reform_Imp_G(g::Function,x::Vector{T},y,pUBD::VecOfVec,ny::Int,eps_g::Float64) where T<:Real
+function Reform_Imp_G(g::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int,eps_g::Float64) where T<:Real
   g_reform = zeros(T,ny*length(pUBD))
   for i=1:length(pUBD)
     g_reform[(1+ny*(i-1)):(ny*i)] = g(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])+eps_g
@@ -70,7 +70,7 @@ Reformulates the semi-infinite constraint function `g(x,y,p)` into  pSet into
 g(x,y[(ny+1)*(np-1):ny*np],pSet[end])]` for input into implicit global
 optimization routine.
 """
-function Reform_Imp_HG(h::Function,g::Function,x::Vector{T},y,pUBD::VecOfVec,ny::Int,gl::Int,eps_g::Float64) where T<:Real
+function Reform_Imp_HG(h::Function,g::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int,gl::Int,eps_g::Float64) where T<:Real
   np = length(pUBD)
   hg_reform = zeros(T,(ny+gl)*np)
   for i=1:np
@@ -87,7 +87,7 @@ end
 Reformulates the Jacobian w.r.t y, `hj!`, of `h(x,y,p)` into  pSet into `hj!(H,x,y*)`
 for input into implicit global optimization routine where `y* = [y_1; y_2; ... y_np]`.
 """
-function Reform_Imp_HJ(hj::Function,x::Vector{T},y,pUBD::VecOfVec,ny::Int) where T<:Real
+function Reform_Imp_HJ(hj::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int) where T<:Real
   hj_reform = zeros(T,ny*length(pUBD),ny*length(pUBD))
   for i=1:length(pUBD)
     hj_reform[(1+ny*(i-1)):(ny*i),(1+ny*(i-1)):(ny*i)] = hj(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])

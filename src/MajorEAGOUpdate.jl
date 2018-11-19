@@ -32,4 +32,8 @@ include("Optimizer/Relaxations/StandardForms/Linear.jl")
 include("Optimizer/Relaxations/StandardForms/Quadratic.jl")
 include("Optimizer/Relaxations/Evaluator/Evaluator.jl")
 
+export SIP_opts, Explicit_SIP_Solve
+
+include("SemiInfinite/SemiInfinite.jl")
+
 end # module
