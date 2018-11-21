@@ -20,12 +20,11 @@ MOI.get(m::Optimizer, ::MOI.TerminationStatus) = m.TerminationStatusCode
 MOI.get(m::Optimizer, ::MOI.PrimalStatus) = m.ResultStatusCode
 
 function MOI.get(m::Optimizer, ::MOI.SolveTime)
-    IterCount = m.CurrentIterationCount
-    if IterCount > 0
-        return m.History.PreprocessTime[m.CurrentIterationCount] +
-               m.History.PostprocessTime[m.CurrentIterationCount] +
-               m.History.LowerTime[m.CurrentIterationCount] +
-               m.History.UpperTime[m.CurrentIterationCount]
+    if m.CurrentIterationCount > 0
+        return m.History.PreprocessTime[m.CurrentIterationCount-1] +
+               m.History.PostprocessTime[m.CurrentIterationCount-1] +
+               m.History.LowerTime[m.CurrentIterationCount-1] +
+               m.History.UpperTime[m.CurrentIterationCount-1]
      else
          return 0.0
      end

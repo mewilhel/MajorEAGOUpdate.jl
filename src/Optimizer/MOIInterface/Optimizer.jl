@@ -291,14 +291,14 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.FirstSolutionNode = -1
         m.LastGap = -Inf
         m.OptimizationSense = MOI.FeasibilitySense
-        m.TerminationStatusCode = MOI.OtherError
+        m.TerminationStatusCode = MOI.OtherError #MOI.OptimizeNotCalled
         m.ResultStatusCode = MOI.OtherResultStatus
         m.StartedSolve = false
         m.FailedSolver = NoFailure
 
         # Output specification fields
-        #m.Verbosity = 1
-        m.Verbosity = 3
+        m.Verbosity = 0
+        #m.Verbosity = 3
         m.WarmStart = false
         m.OutputInterations = 10
         m.HeaderInterations = 100

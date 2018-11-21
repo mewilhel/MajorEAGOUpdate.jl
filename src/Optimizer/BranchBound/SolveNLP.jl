@@ -76,6 +76,7 @@ function SolveNLP!(x::Optimizer)
       x.LowerProblem(x,CurrentNode)
       LowerProblemTime = 0.0
       x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
+      x.History.LowerTime[x.CurrentIterationCount] = x.History.LowerTime[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
       PrintResults!(x,true)
       while x.CutCondition(x)
@@ -85,6 +86,7 @@ function SolveNLP!(x::Optimizer)
         x.LowerProblem(x,CurrentNode)
         LowerProblemTime = 0.0
         x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount]+LowerProblemTime
+        x.History.LowerTime[x.CurrentIterationCount] = x.History.LowerTime[x.CurrentIterationCount-1]+LowerProblemTime
         x.History.LowerCount += 1
         redirect_stdout(TT)
         PrintResults!(x,true)

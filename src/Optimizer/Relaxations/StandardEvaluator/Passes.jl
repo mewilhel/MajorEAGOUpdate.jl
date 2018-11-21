@@ -216,14 +216,14 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 error("IF ELSE TO DO")
                 #storage[k] = SetValuePost(x_values, ifelse(condition == 1, lhs, rhs), current_node)
             elseif op >= JuMP.Derivatives.USER_OPERATOR_ID_START
-                evaluator = user_operators.multivariate_operator_evaluator[op - USER_OPERATOR_ID_START+1]
+                evaluator = user_operators.multivariate_operator_evaluator[op - JuMP.Derivatives.USER_OPERATOR_ID_START+1]
                 f_input = view(user_input_buffer, 1:n_children)
                 r = 1
                 isnum = true
                 for c_idx in children_idx
                     @inbounds ix = children_arr[c_idx]
                     @inbounds chdset = numvalued[ix]
-                    isset &= chdset
+                    isnum &= chdset
                     if chdset
                         @inbounds f_input[r] = setstorage[ix]
                     else

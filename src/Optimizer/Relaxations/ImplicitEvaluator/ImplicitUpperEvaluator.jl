@@ -1,13 +1,13 @@
-# state gradient  functions and expand forwarddiff to allow for computation of state then f,g
-mutable struct ImplicitUpperEvaluatorEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
+# FIX ME
+mutable struct ImplicitUpperEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     current_node::NodeBB
 
     disable_1storder::Bool
     disable_2ndorder::Bool
     has_nlobj::Bool
 
-    var_number::Int
-    cnstr_number::Int
+    np::Int
+    ng::Int
     last_p::Vector{Float64}
     diff_result::Union{DiffResults.JacobianResult,DiffResults.HessianResult}
     diff_config::Union{ForwardDiff.JacobianConfig,ForwardDiff.HessianConfig}
@@ -25,22 +25,23 @@ mutable struct ImplicitUpperEvaluatorEvaluator{T<:Real} <: MOI.AbstractNLPEvalua
     end
 end
 
+# FIX ME
 function SetupEvaluator(d,f,g)
-    if (cnstr_number > 0) && has_nlobj
-        d.fg = x-> vcat(f(x),g(x))
+    if (d.ng > 0) && d.has_nlobj
+        d.fg = x -> vcat(f(x),g(x))
     elseif has_nlobj
-        d.fg = x-> f(x)
+        d.fg = x -> f(x)
     else
-        d.fg = x-> g(x)
+        d.fg = x -> g(x)
     end
     d.diff_result = DiffResults.JacobianResult(x)
 end
 
 
-# LOOKS GREAT!
+# FIX ME
 function calc_functions!(d::ImplicitUpperEvaluator,p)
     if (d.last_p != p)
-        if ~disable_1storder
+        if ~d.disable_1storder
             ForwardDiff.jacobian!(d.diff_result, d.fg, p, d.diff_config)
             d.value_storage = DiffResults.value(d.diff_result)
             d.jacobian_storage = DiffResults.jacobian(d.diff_result)
@@ -51,7 +52,7 @@ function calc_functions!(d::ImplicitUpperEvaluator,p)
     end
 end
 
-# LOOKS GREAT!
+# FIX ME!
 function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
     d.eval_objective_timer += @elapsed begin
         val = zero(eltype(p))
@@ -65,13 +66,13 @@ function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
     return val
 end
 
-# LOOKS GREAT!
+# FIX ME
 function MOI.eval_constraint(d::ImplicitUpperEvaluator, g, p)
     d.eval_constraint_timer += @elapsed begin
         if d.num_constraints > 0
             calc_functions!(d,p)
             for i in 1:d.num_constraints
-                g[i] = cnstr_relax[i].cv
+                d.g[i] = d.cnstr_relax[i].cv
             end
         end
     end
@@ -93,7 +94,7 @@ function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, p)
     return
 end
 
-# LOOKS GREAT!
+# FIX ME
 function MOI.jacobian_structure(d::ImplicitUpperEvaluator)
     # use user-defined sparsity pattern if possible
     if length(d.jacobian_sparsity) > 0
@@ -114,7 +115,7 @@ function _hessian_lagrangian_structure(d::ImplicitUpperEvaluator)
     error("Hessian lagrangian structure not supported by Implicit optimizer.")
 end
 
-# TO DO
+# FIX ME
 function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator,g,p)
     #d.eval_constraint_jacobian_timer += @elapsed begin
         forward_reverse_pass(d,p)
@@ -135,7 +136,7 @@ function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator,g,p)
     return
 end
 
-# TO DO
+# FIX ME
 function MOI.eval_constraint_jacobian_product(d::ImplicitUpperEvaluator, y, p, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
@@ -156,7 +157,7 @@ function MOI.eval_constraint_jacobian_product(d::ImplicitUpperEvaluator, y, p, w
     return
 end
 
-# TO DO
+# FIX ME
 function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitUpperEvaluator, y, p, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
@@ -177,7 +178,7 @@ function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitUpperEvaluato
     return
 end
 
-# LOOKS GREAT
+# FIX ME
 function MOI.features_available(d::ImplicitUpperEvaluator)
     features = Symbol[]
     if !d.disable_1storder

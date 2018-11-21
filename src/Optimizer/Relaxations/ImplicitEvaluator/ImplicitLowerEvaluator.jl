@@ -1,4 +1,4 @@
-mutable struct ImplicitLowerEvaluatorEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
+mutable struct ImplicitLowerEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     current_node::NodeBB
     last_node::NodeBB
 
@@ -6,7 +6,8 @@ mutable struct ImplicitLowerEvaluatorEvaluator{T<:Real} <: MOI.AbstractNLPEvalua
     disable_2ndorder::Bool
     has_nlobj::Bool
     objective::Function
-    num_control::Int
+    np::Int
+    nx::Int
     num_constraints::Int
     constraints::Vector{Function}
     jacobian_sparsity::Vector{Tuple{Int64,Int64}}
@@ -35,17 +36,23 @@ end
 # TO DO
 function relax_implicit!(d::ImplicitLowerEvaluator,p)
     # Generate new parameters for implicit relaxation if necessary
-    if current_node == last_node
-        #GenExpansionParams(h::Function, hj::Function, X::Vector{IntervalType}, P::Vector{IntervalType}, pmid::Vector{Float64},mc_opts::mc_opts)
-        d.state_ref_relaxation = GenExpansionParams(h, hj, X, P, pmid, mc_opts)
+    if d.current_node != d.last_node
+        for i in 1:np
+            d.ref_p[i] = (d.current_node.LowerVar[i]+d.current_node.UpperVar[i])/2.0
+            d.P[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
+        end
+        for j in (np+1):(np+nx)
+            shiftj = j - np
+            d.X[shiftj] = IntervalType(d.current_node.LowerVar[j],d.current_node.UpperVar[j])
+        end
+        d.state_ref_relaxation = GenExpansionParams(d.h, d.hj, d.X, d.P, d.ref_p, d.mc_opts)
     end
     # Generate new value of implicit relaxation
     if d.ref_p != p
-        d.ref_p = p
         d.obj_eval = false
         d.cnstr_eval = false
-        # MC_impRelax(h::Function, hj::Function, p::Vector{MC{N}}, pmid::Vector{Float64}, X::Vector{IntervalType}, P::Vector{IntervalType}, mc_opts::mc_opts,param::Vector{Vector{MC{N}}}) where N
-        d.state_relax = MC_impRelax(h, hj, p, pmid, X, P, mc_opts, d.state_ref_relaxation)
+        pMC = MC{np}(p,d.P)
+        d.state_relax = MC_impRelax(d.h, d.hj, pMC, d.ref_p, d.X, d.P, d.mc_opts, d.state_ref_relaxation)
     else
         d.state_relax = d.state_ref_relaxation
     end
@@ -102,7 +109,7 @@ function MOI.eval_objective_gradient(d::ImplicitLowerEvaluator, df, p)
         if d.has_nlobj
             relax_implicit!(d,p)
             relax_objective!(d)
-            for j in 1:d.num_control
+            for j in 1:d.np
                 df[j] = d.obj_relax.cv_grad[j]
             end
         else
@@ -118,7 +125,7 @@ function MOI.jacobian_structure(d::ImplicitLowerEvaluator)
     if length(d.jacobian_sparsity) > 0
         return d.jacobian_sparsity
     else # else assume dense pattern
-        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.num_constraints for idx in 1:d.num_controls]
+        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.num_constraints for idx in 1:d.np]
         return d.jacobian_sparsity
     end
 end

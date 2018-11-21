@@ -32,9 +32,9 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
         df = zeros(Float64,ngrad)
         f = MOI.eval_objective(evaluator, midx)
         MOI.eval_objective_gradient(evaluator, df, midx)
-        println("f: $f")
-        println("df: $df")
-        println("const term: $(f-sum(midx.*df))")
+        #println("f: $f")
+        #println("df: $df")
+        #println("const term: $(f-sum(midx.*df))")
         MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(df, var), f-sum(midx.*df)))
     end
 
@@ -69,13 +69,13 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
                 for i in 1:ngrad
                     constant -= midx[i]*dg[j,i]
                 end
-                println("constant: $constant")
-                println("var: $var")
-                println("coeff: $(dg[j,:])")
+                #println("constant: $constant")
+                #println("var: $var")
+                #println("coeff: $(dg[j,:])")
                 #println("b: $(bns.upper-constant)")
                 MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(dg[j,:], var), 0.0), MOI.LessThan(bns.upper-constant))
             end
-            println("lower bound")
+            #println("lower bound")
             if bns.lower > -Inf
                 constant = g_cc[j]
                 #println("constant: $constant")
