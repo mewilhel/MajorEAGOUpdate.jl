@@ -30,7 +30,7 @@ include("Optimizer/MathOptInterfaceEAGO.jl")
 
 include("Optimizer/Relaxations/StandardForms/Linear.jl")
 include("Optimizer/Relaxations/StandardForms/Quadratic.jl")
-include("Optimizer/Relaxations/Evaluator/Evaluator.jl")
+include("Optimizer/Relaxations/StandardEvaluator/Evaluator.jl")
 
 export SIP_opts, Explicit_SIP_Solve
 

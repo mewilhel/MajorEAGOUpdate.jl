@@ -57,15 +57,15 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
             d.subexpressions_as_julia_expressions = src.subexpressions_as_julia_expressions
         end
 
-        d.subexpression_values = S[]
+        d.subexpression_values_set = S[]
+        d.subexpression_values_flt = Float64[]
         d.subexpressions = SubexpressionSetStorage{S}[]
-        println("typeof(d.subexpressions): $(typeof(d.subexpressions))")
         for i in 1:length(src.subexpressions)
-            temp = copy_to_subexpr(SubexpressionSetStorage{S},src.subexpressions[i])
-            println("temp: $(temp)")
+            temp = copy_to_subexpr(S,src.subexpressions[i])
             push!(d.subexpressions,temp)
         end
-        d.subexpression_values = fill(NaN,length(d.subexpressions))
+        d.subexpression_values_set = fill(NaN,length(d.subexpressions))
+        d.subexpression_values_flt = fill(NaN,length(d.subexpressions))
 
         # USER OUTPUT BUFFERS??????
         d.fw_repeats = x.EvalWalkRepts

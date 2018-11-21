@@ -17,6 +17,8 @@ MOI.get(m::Optimizer, ::MOI.ObjectiveBound) = m.GlobalUpperBound
 MOI.get(m::Optimizer, ::MOI.RelativeGap) = m.GlobalUpperBound
 MOI.get(m::Optimizer, ::MOI.SolverName) = "EAGO: Easy Advanced Global Optimization"
 MOI.get(m::Optimizer, ::MOI.TerminationStatus) = m.TerminationStatusCode
+MOI.get(m::Optimizer, ::MOI.PrimalStatus) = m.ResultStatusCode
+
 function MOI.get(m::Optimizer, ::MOI.SolveTime)
     IterCount = m.CurrentIterationCount
     if IterCount > 0
@@ -32,9 +34,5 @@ MOI.get(m::Optimizer, ::MOI.NodeCount) = length(m.MaximumNodeID)
 
 function MOI.get(model::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableIndex)
     check_inbounds(model, vi)
-    println("vi.value: $(vi.value)")
-    println("model.VariableNumber: $(model.VariableNumber)")
-    println("length(model.ContinuousSolution): $(length(model.ContinuousSolution))")
-    @assert length(model.ContinuousSolution) < vi.value
     return model.ContinuousSolution[vi.value]
 end

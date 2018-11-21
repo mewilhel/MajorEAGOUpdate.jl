@@ -122,6 +122,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     OptimizationSense::MOI.OptimizationSense                               #
     ObjectiveValue::Float64
     TerminationStatusCode::MOI.TerminationStatusCode                       #
+    ResultStatusCode::MOI.ResultStatusCode
     StartedSolve::Bool                                                     #
     FailedSolver::SolverFailed                                             # Stores branching function
 
@@ -291,6 +292,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.LastGap = -Inf
         m.OptimizationSense = MOI.FeasibilitySense
         m.TerminationStatusCode = MOI.OtherError
+        m.ResultStatusCode = MOI.OtherResultStatus
         m.StartedSolve = false
         m.FailedSolver = NoFailure
 

@@ -24,7 +24,7 @@ SetValuePost(x_values::Vector{Float64},val::MC{N},node::NodeBB) where N = val
 
 function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, numvalued::Vector{Bool},
                       nd::AbstractVector{JuMP.NodeData}, adj, const_values, parameter_values, current_node::NodeBB,
-                      x_values::Vector{Float64}, subexpression_values, user_input_buffer;
+                      x_values::Vector{Float64}, subexpr_values_flt, subexpr_values_set, user_input_buffer;
                       user_operators::JuMP.Derivatives.UserOperatorRegistry=JuMP.Derivatives.UserOperatorRegistry()) where T
 
     @assert length(numberstorage) >= length(nd)
@@ -49,11 +49,9 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
         elseif nod.nodetype == JuMP.Derivatives.SUBEXPRESSION
             @inbounds isnum = numvalued[nod.index]
             if isnum
-                @inbounds numberstorage[k] = subexpression_values[nod.index]
-                #println("AT k: $k,  Subexpression assignment yeilds numstorage: $(numberstorage[k])")
+                @inbounds numberstorage[k] = subexpr_values_flt[nod.index]
             else
-                @inbounds setstorage[k] = subexpression_values[nod.index]
-                #println("AT k: $k,  Subexpression assignment yeildssetstorage: $(setstorage[k])")
+                @inbounds setstorage[k] = subexpr_values_set[nod.index]
             end
             numvalued[k] == isnum
         elseif nod.nodetype == JuMP.Derivatives.PARAMETER
@@ -179,23 +177,21 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
                 @inbounds chdset1 = numvalued[ix1]
                 @inbounds chdset2 = numvalued[ix2]
                 if chdset1
-                    @inbounds numerator = setstorage[ix1]
-                else
                     @inbounds numerator = numberstorage[ix1]
+                else
+                    @inbounds numerator = setstorage[ix1]
                 end
                 if chdset2
-                    @inbounds denominator = setstorage[ix2]
-                else
                     @inbounds denominator = numberstorage[ix2]
+                else
+                    @inbounds denominator = setstorage[ix2]
                 end
-                if chdset1 || chdset2
+                if chdset1 && chdset2
                     numberstorage[k] = numerator/denominator
-                    #println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(numberstorage[k])")
                 else
                     setstorage[k] = SetValuePost(x_values, numerator/denominator, current_node)
-                    #println("AT k: $k,   DIV CALL assigment yeilds setstorage: $(setstorage[k])")
                 end
-                numvalued[k] = chdset1 || chdset2
+                numvalued[k] = chdset1 && chdset2
             elseif op == 6 # ifelse
                 @assert n_children == 3
                 idx1 = first(children_idx)
@@ -343,30 +339,36 @@ function forward_eval(setstorage::Vector{T}, numberstorage::Vector{Float64}, num
 end
 
 function forward_eval_all(d::Evaluator,x)
-    subexpr_values = d.subexpression_values
+    subexpr_values_flt = d.subexpression_values_flt
+    subexpr_values_set = d.subexpression_values_set
     user_operators = d.m.nlp_data.user_operators::JuMP.Derivatives.UserOperatorRegistry
     user_input_buffer = d.jac_storage
     for k in d.subexpression_order
         ex = d.subexpressions[k]
-        subexpr_values[k] = forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
+        temp = forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                                          ex.nd, ex.adj, ex.const_values,
                                          d.parameter_values, d.current_node,
-                                         x, subexpr_values, user_input_buffer,
+                                         x, subexpr_values_flt, subexpr_values_set, user_input_buffer,
                                          user_operators=user_operators)
+        if typeof(temp) == Float64
+            subexpr_values_flt[k] = temp
+        else
+            subexpr_values_set[k] = temp
+        end
     end
     if d.has_nlobj
         ex = d.objective
         forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                      ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
-                     x, subexpr_values, user_input_buffer,
+                     x, subexpr_values_flt, subexpr_values_set, user_input_buffer,
                      user_operators=user_operators)
     end
     for ex in d.constraints
         forward_eval(ex.setstorage, ex.numberstorage, ex.numvalued,
                      ex.nd, ex.adj, ex.const_values,
                      d.parameter_values, d.current_node,
-                     x,subexpr_values, user_input_buffer,
+                     x, subexpr_values_flt, subexpr_values_set, user_input_buffer,
                      user_operators=user_operators)
     end
 end

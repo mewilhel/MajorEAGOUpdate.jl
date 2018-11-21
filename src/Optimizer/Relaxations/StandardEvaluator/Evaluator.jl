@@ -57,7 +57,8 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     constraints::Vector{FunctionSetStorage{T}}
     subexpressions::Vector{SubexpressionSetStorage{T}}
     subexpression_order::Vector{Int}
-    subexpression_values::Vector{T}
+    subexpression_values_flt::Vector{Float64}
+    subexpression_values_set::Vector{T}
     subexpression_linearity::Vector{JuMP.Derivatives.Linearity}
     subexpressions_as_julia_expressions::Vector{Any}
     last_x::Vector{Float64}

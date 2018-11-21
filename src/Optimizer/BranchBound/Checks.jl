@@ -22,15 +22,16 @@ function DefaultTerminationCheck(x::Optimizer)
     t3 = length(x.Stack) < x.NodeLimit                         # maximum node number not exceeded
     t4 = (U - L) > x.AbsoluteTolerance                         # absolute tolerance satisfied
     t5 = (abs(U - L)/(min(abs(L),abs(U))) > x.RelativeTolerance) || ~(L > -Inf)   # relative tolerance satisfied
-
     if t1 & t2 & t3 & t4 & t5
       return true
     else
       if (x.Verbosity == 2 || x.Verbosity == 3)
         if ~t1
           if (x.FirstSolutionNode > 0)
+            x.ResultStatusCode = MOI.FeasiblePoint
             println("Empty Stack: Exhaustive Search Finished")
           else
+            x.ResultStatusCode = MOI.InfeasibilityCertificate
             println("Empty Stack: Infeasible")
           end
         elseif ~t3
@@ -38,6 +39,7 @@ function DefaultTerminationCheck(x::Optimizer)
         elseif ~t2
           println("Maximum Iteration Exceeded")
         else
+          x.ResultStatusCode = MOI.FeasiblePoint
           println("Convergence Tolerance Reached")
         end
       end

@@ -32,11 +32,10 @@ function SolveNLP!(x::Optimizer)
     PostSaveFlag = false
     x.CutIterations = 0
 
-    println("x.Stack: $(x.Stack)")
      # Selects node, deletes it from stack, prints based on verbosity
     CurrentKey,CurrentNode = x.NodeSelection(x)
     (x.Verbosity == 3) && PrintNode!(CurrentKey,CurrentNode) # Prints node in full verbosity mode
-    println("x.Stack: $(x.Stack)")
+
     # Solves preprocessing/LBD/UBD/postprocessing once to get timing right
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
@@ -79,7 +78,6 @@ function SolveNLP!(x::Optimizer)
       x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
       PrintResults!(x,true)
-      println("x.Stack: $(x.Stack)")
       while x.CutCondition(x)
         x.AddCut!(x); x.CutIterations += 1
         redirect_stdout()

@@ -26,6 +26,6 @@ model = Model(with_optimizer(EAGO.Optimizer))
 optimize!(model)
 
 # Access functions for the solution
-ObjectiveValue = getobjectivevalue(model)
-Feasibility = getfeasibility(model)
-Solution = getvalue.(x)
+ObjectiveValue = JuMP.objective_value(model)
+Feasibility = JuMP.primal_status(model)
+Solution = JuMP.value.(x)
