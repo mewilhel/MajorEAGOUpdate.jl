@@ -47,11 +47,18 @@ function MOI.optimize!(m::Optimizer)
 
     # Build the JuMP NLP evaluator
     evaluator = m.NLPData.evaluator
+    println("typeof(evaluator): $(typeof(evaluator))")
     features = MOI.features_available(evaluator)
+    println("typeof(features): $(typeof(features))")
     has_hessian = (:Hess in features)
+    println("typeof(has_hessian): $(typeof(has_hessian))")
     init_feat = [:Grad]
-    has_hessian && push!(init_feat, :Hess)
+    println("typeof(init_fea): $(typeof(init_feat))")
+    #has_hessian && push!(init_feat, :Hess)
+    println("has_hessian: $has_hessian")
     num_nlp_constraints > 0 && push!(init_feat, :Jac)
+    println("init_feat: $init_feat")
+    println("num_nlp_constraints: $num_nlp_constraints")
     MOI.initialize(evaluator,init_feat)
 
     # Sets up relaxations terms that don't vary during iterations (mainly linear)

@@ -3,6 +3,8 @@
 function loadscript_bnds_lbd!(m, nx::Int, ng::Int, xL::Vector{Float64}, xU::Vector{Float64},
                      gL::Vector{Float64}, gU::Vector{Float64},f, g, pIndx, LBP_vars)
 
+        println("typeof(m): $(typeof(m))")
+
         # create JuMP model
         jmodel = Model(with_optimizer(m))
 
@@ -42,7 +44,7 @@ function loadscript_bnds_ubd!(m::MOI.AbstractOptimizer, nx::Int, ng::Int, xL::Ve
          # Add variables and associated bounds
          UBP_vars= @variable(jmodel, xL[i] <= UBP_vars[i in 1:nx] <= xU[i])
 
-         # Add nonlinear objective
+         # Add nonlinear objective (nothing defined with 3 arguments)
          JuMP.register(jmodel, :f, nx, f; autodiff=true)
          JuMP.set_NL_objective(jmodel, MOI.MinSense, Expr(:call, :f, UBP_vars...))
 

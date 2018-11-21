@@ -61,6 +61,7 @@ function Explicit_SIP_Solve(f,gSIP,X_low,X_high,P_low,P_high,SIPopt::SIP_opts)
     gL_LBP = [-Inf for i=1:length(P_LBD)]
     gU_LBP = [0.0 for i=1:length(P_LBD)]
     LBP_vars, jLBP = loadscript_bnds_lbd!(SIPopt.LBP_Opt,nx, length(P_LBD), X_low, X_high,gL_LBP, gU_LBP, f, gSIP, P_LBD, LBP_vars)
+    println("preoptimize 1")
     JuMP.optimize!(jLBP)
 
     # Process output info and save to CurrentUpperInfo object
