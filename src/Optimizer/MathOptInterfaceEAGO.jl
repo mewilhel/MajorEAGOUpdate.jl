@@ -15,3 +15,6 @@ include("DomainReduction/DBBT.jl")
 include("DomainReduction/OBBT.jl")
 include("DomainReduction/PoorLP.jl")
 #include("DomainReduction/Quadratics.jl")
+
+# Implicit Routines
+include("ImplicitEvaluator.jl")

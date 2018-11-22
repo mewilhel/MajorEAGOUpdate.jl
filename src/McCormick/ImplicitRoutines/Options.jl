@@ -10,7 +10,7 @@ Storage type used for parameter options in implicit bounding routine.
 * `nx::Int`:
 * `aff_correct_eps::Float64`: Affine correction tolerance
 """
-struct mc_opts
+mutable struct mc_opts
   lambda::Float64
   kmax::Int
   LAlg::Symbol   # Type of symbol

@@ -1,5 +1,5 @@
 # FIX ME
-mutable struct ImplicitUpperEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
+mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
     current_node::NodeBB
 
     disable_1storder::Bool
@@ -19,13 +19,13 @@ mutable struct ImplicitUpperEvaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     eval_objective_gradient_timer::Float64
     eval_constraint_jacobian_timer::Float64
     eval_hessian_lagrangian_timer::Float64
-    function Evaluator{T}(m) where T<:Real
+    function ImplicitUpperEvaluator()
         d = new()
         return d
     end
 end
 
-# FIX ME
+# LOOKS GREAT!
 function SetupEvaluator(d,f,g)
     if (d.ng > 0) && d.has_nlobj
         d.fg = x -> vcat(f(x),g(x))
@@ -38,7 +38,7 @@ function SetupEvaluator(d,f,g)
 end
 
 
-# FIX ME
+# LOOKS GREAT!
 function calc_functions!(d::ImplicitUpperEvaluator,p)
     if (d.last_p != p)
         if ~d.disable_1storder
@@ -52,10 +52,10 @@ function calc_functions!(d::ImplicitUpperEvaluator,p)
     end
 end
 
-# FIX ME!
+# LOOKS GREAT!
 function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
     d.eval_objective_timer += @elapsed begin
-        val = zero(eltype(p))
+        val = 0.0
         if (d.has_nlobj)
             calc_functions!(d,p)
             val = d.value_storage[1]
@@ -66,14 +66,12 @@ function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
     return val
 end
 
-# FIX ME
+# LOOKS GREAT!
 function MOI.eval_constraint(d::ImplicitUpperEvaluator, g, p)
     d.eval_constraint_timer += @elapsed begin
-        if d.num_constraints > 0
+        if d.ng > 0
             calc_functions!(d,p)
-            for i in 1:d.num_constraints
-                d.g[i] = d.cnstr_relax[i].cv
-            end
+            g[:] = d.value_storage[2:end]
         end
     end
     return
@@ -84,9 +82,7 @@ function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, p)
     d.eval_objective_timer += @elapsed begin
         if d.has_nlobj
             calc_functions!(d,p)
-            for j in 1:d.num_control
-                df[j] = d.obj_relax.cv_grad[j]
-            end
+            df[:] = d.jacobian_storage[1,1:d.np]
         else
             error("No nonlinear objective.")
         end
@@ -94,13 +90,13 @@ function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, p)
     return
 end
 
-# FIX ME
+# LOOKS GREAT!
 function MOI.jacobian_structure(d::ImplicitUpperEvaluator)
     # use user-defined sparsity pattern if possible
     if length(d.jacobian_sparsity) > 0
         return d.jacobian_sparsity
     else # else assume dense pattern
-        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.num_constraints for idx in 1:d.num_controls]
+        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.ng for idx in 1:d.np]
         return d.jacobian_sparsity
     end
 end
@@ -115,22 +111,12 @@ function _hessian_lagrangian_structure(d::ImplicitUpperEvaluator)
     error("Hessian lagrangian structure not supported by Implicit optimizer.")
 end
 
-# FIX ME
-function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator,g,p)
+# LOOKS GREAT!
+function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator, dg, p)
     #d.eval_constraint_jacobian_timer += @elapsed begin
-        forward_reverse_pass(d,p)
-        #t = typeof(d.constraints[1].setstorage[1])
-        #g = zero.(g)
-        for i in 1:length(d.constraints)
-            if ~d.constraints[i].numvalued[1]
-                for j in 1:length(d.constraints[i].setstorage[1].cv_grad)
-                    g[i,j] = d.constraints[i].setstorage[1].cv_grad[j]
-                end
-            else
-                for j in 1:length(d.constraints[i].setstorage[1].cv_grad)
-                    g[i,j] = 0.0
-                end
-            end
+        if d.ng > 0
+            calc_functions!(d,p)
+            dg[:,:] = jacobian_storage[2:end,:]
         end
     #end
     return
@@ -178,7 +164,7 @@ function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitUpperEvaluato
     return
 end
 
-# FIX ME
+# LOOKS GREAT
 function MOI.features_available(d::ImplicitUpperEvaluator)
     features = Symbol[]
     if !d.disable_1storder

@@ -1,7 +1,7 @@
-function SolveImplicit(f::Function,g::Function,h::Function,
-                       xl::Vector{Float64},xu::Vector{Float64},
-                       pl::Vector{Float64},pu::Vector{Float64},
-                       opt::Optimizer)
+function SolveImplicit(f::Function, g::Function, h::Function,
+                       xl::Vector{Float64}, xu::Vector{Float64},
+                       pl::Vector{Float64}, pu::Vector{Float64},
+                       opt::Optimizer; user_sparsity::Vector{Tuple{Int64,Int64}} = sparse_pattern)
 
     #
     @assert length(pl) == length(pu)
@@ -18,7 +18,8 @@ function SolveImplicit(f::Function,g::Function,h::Function,
 
     # Build the lower evaluator
     ImpLowerEval = ImplicitLowerEvaluator()
-    ImpLowerEval.np = np; ImpLowerEval.nx = nx
+    build_lower_evaluator!(ImpLowerEval, obj = f, constr = g, impfun = h,
+                           nx = nx, np = np, user_sparse = sparse_pattern)
 
     # Build the upper evaluator
     ImpUpperEval = ImplicitUpperEvaluator()
