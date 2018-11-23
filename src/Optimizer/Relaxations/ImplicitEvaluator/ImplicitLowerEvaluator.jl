@@ -5,15 +5,19 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
     disable_1storder::Bool
     disable_2ndorder::Bool
     has_nlobj::Bool
-    objective::Function
+    objective_fun::Function
+    constraints_fun::Function
+    state_fun::Function
+    state_jac_fun::Function
     np::Int
-    nx::Int
     ng::Int
-    constraints::Function
+    nx::Int
     jacobian_sparsity::Vector{Tuple{Int64,Int64}}
     obj_eval::Bool
     cnstr_eval::Bool
 
+    P::Vector{IntervalType}
+    X::Vector{IntervalType}
     last_p::Vector{Float64}
     ref_p::Vector{Float64}
     var_relax::Vector{MC{N}}
@@ -33,11 +37,12 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
     function ImplicitLowerEvaluator{N}() where N
         d = new()
 
-        d.objective = nothing
-        d.constraints = nothing
+        #d.objective_fun = nothing
+        #d.constraints_fun = nothing
+        #d.state_fun = nothing
         d.obj_eval = false
         d.cnstr_eval = false
-        d.jacobian_sparsity = nothing
+        d.jacobian_sparsity = Tuple{Int64,Int64}[]
 
         d.np = 0
         d.nx = 0
@@ -49,11 +54,13 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
         d.eval_constraint_jacobian_timer = 0.0
         d.eval_hessian_lagrangian_timer = 0.0
 
-        d.var_relax = [zero(MC{N}) for i in 1:N]
+        d.var_relax = fill(zero(MC{N}),(N,))
         d.state_relax = [zero(MC{N})]
         d.state_ref_relaxation = [[zero(MC{N})]]
         d.obj_relax = zero(MC{N})
         d.cnstr_relax = [zero(MC{N})]
+        d.P = fill(IntervalType(0.0),(1,))
+        d.X = fill(IntervalType(0.0),(1,))
 
         last_p = Float64[0.0]
         ref_p = Float64[0.0]
@@ -76,8 +83,11 @@ function build_lower_evaluator!(d::ImplicitLowerEvaluator; obj = nothing, constr
                                 user_sparse::Vector{Tuple{Int64,Int64}} = nothing)
 
     # setup objective and constraint functions
-    d.objective = obj
-    d.constraints = constr
+    d.objective_fun = obj
+    d.constraints_fun = constr
+    d.state_fun = impfun
+    yimp = y -> d.state_fun(y[(np+1):(nx+np)],y[1:np])
+    d.state_jac_fun = (x,p) -> ForwardDiff.jacobian(yimp,vcat(x,p))[:,(np+1):(nx+np)]
 
     # has a nonlinear objective?
     (obj == nothing) || (d.has_nlobj = true)
@@ -91,9 +101,17 @@ function build_lower_evaluator!(d::ImplicitLowerEvaluator; obj = nothing, constr
     d.imp_opts.np = np
 
     # preallocates the storage variables
-    d.state_relax = MC{N}[zero(MC{N}) for i in 1:nx]
-    d.cnstr_relax = MC{N}[zero(MC{N}) for i in 1:ng]
-    d.state_ref_relaxation = Vector{MC{N}}[MC{N}[zero(MC{N}) for i in 1:nx] for j in 1:d.imp_opts.kmax]
+    println("initialized state")
+    temp = zero(MC{np})
+    println("temp: $temp")
+    d.state_relax = fill(temp,(nx,))
+    println("initialized constraint")
+    d.cnstr_relax = MC{np}[zero(MC{np}) for i in 1:ng]
+    println("initialized ref state")
+    d.state_ref_relaxation = Vector{MC{np}}[MC{np}[zero(MC{np}) for i in 1:nx] for j in 1:d.imp_opts.kmax]
+
+    d.P = fill(IntervalType(0.0),(np,))
+    d.X = fill(IntervalType(0.0),(nx,))
 
     # allocates the reference points
     d.last_p = zeros(Float64,np)
@@ -116,22 +134,22 @@ function relax_implicit!(d::ImplicitLowerEvaluator,p)
     if d.current_node != d.last_node
         d.obj_eval = false
         d.cnstr_eval = false
-        for i in 1:np
+        for i in 1:d.np
             d.ref_p[i] = (d.current_node.LowerVar[i]+d.current_node.UpperVar[i])/2.0
             d.P[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
         end
-        for j in (np+1):(np+nx)
-            shiftj = j - np
+        for j in (d.np+1):(d.np+d.nx)
+            shiftj = j - d.np
             d.X[shiftj] = IntervalType(d.current_node.LowerVar[j],d.current_node.UpperVar[j])
         end
-        d.state_ref_relaxation = GenExpansionParams(d.h, d.hj, d.X, d.P, d.ref_p, d.mc_opts)
+        d.state_ref_relaxation = GenExpansionParams(d.state_fun, d.state_jac_fun, d.X, d.P, d.ref_p, d.imp_opts)
     end
     # Generate new value of implicit relaxation
     if d.ref_p != p
         d.obj_eval = false
         d.cnstr_eval = false
-        pMC = MC{np}(p,d.P)
-        d.state_relax = MC_impRelax(d.h, d.hj, pMC, d.ref_p, d.X, d.P, d.mc_opts, d.state_ref_relaxation)
+        pMC = MC{d.np}.(p,d.P)
+        d.state_relax = MC_impRelax(d.state_fun, d.state_jac_fun, pMC, d.ref_p, d.X, d.P, d.imp_opts, d.state_ref_relaxation)
     else
         d.state_relax = d.state_ref_relaxation
     end
@@ -140,15 +158,15 @@ end
 # LOOKS GREAT!
 function relax_objective!(d::ImplicitLowerEvaluator)
     if ~d.obj_eval
-        d.obj_relax = d.objective(d.state_relax,d.var_relax)
+        d.obj_relax = d.objective_fun(d.state_relax,d.var_relax)
         d.obj_eval = true
     end
 end
 
 # LOOKS GREAT!
 function relax_constraints!(d::ImplicitLowerEvaluator)
-    if ~d.cntr_eval
-        d.cnstr_relax = d.constraints(d.state_relax,d.var_relax)
+    if ~d.cnstr_eval
+        d.cnstr_relax = d.constraints_fun(d.state_relax,d.var_relax)
         d.cnstr_eval = true
     end
 end
@@ -204,7 +222,7 @@ function MOI.jacobian_structure(d::ImplicitLowerEvaluator)
     if length(d.jacobian_sparsity) > 0
         return d.jacobian_sparsity
     else # else assume dense pattern
-        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.num_constraints for idx in 1:d.np]
+        d.jacobian_sparsity = Tuple{Int64,Int64}[(row, idx) for row in 1:d.ng for idx in 1:d.np]
         return d.jacobian_sparsity
     end
 end

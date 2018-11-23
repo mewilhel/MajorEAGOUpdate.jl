@@ -9,12 +9,9 @@ using LinearAlgebra
 using JuMP
 using JuMP.Derivatives
 
-using Ipopt
-using Clp
-using DiffRules
-using Reexport
-using StaticArrays
-using IntervalArithmetic
+using Ipopt, Clp
+using DiffRules, ForwardDiff, ReverseDiff
+using Reexport, StaticArrays, IntervalArithmetic
 using Calculus
 
 const MOI = MathOptInterface
@@ -27,6 +24,10 @@ import Base.eltype
 
 include("Optimizer/IpoptSupplement.jl")
 include("Optimizer/MathOptInterfaceEAGO.jl")
+
+export ImplicitLowerEvaluator, build_lower_evaluator!,
+       ImplicitUpperEvaluator, build_upper_evaluator!
+
 
 include("Optimizer/Relaxations/StandardForms/Linear.jl")
 include("Optimizer/Relaxations/StandardForms/Quadratic.jl")

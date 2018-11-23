@@ -1,3 +1,5 @@
+const RD_COMPILE_SWITCH = 3000
+
 # FIX ME
 mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
     current_node::NodeBB
@@ -6,11 +8,15 @@ mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
     disable_2ndorder::Bool
     has_nlobj::Bool
 
+    fg::Function
+    func_eval::Bool
+
     np::Int
+    ny::Int
     ng::Int
-    last_p::Vector{Float64}
-    diff_result::Union{DiffResults.JacobianResult,DiffResults.HessianResult}
-    diff_config::Union{ForwardDiff.JacobianConfig,ForwardDiff.HessianConfig}
+    last_y::Vector{Float64}
+    diff_result
+    diff_tape
 
     value_storage::Vector{Float64}
     jacobian_storage::VecOrMat{Float64}
@@ -21,43 +27,75 @@ mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
     eval_hessian_lagrangian_timer::Float64
     function ImplicitUpperEvaluator()
         d = new()
+        d.disable_1storder = false
+        d.has_nlobj = false
+        d.func_eval = false
         return d
     end
 end
 
-# LOOKS GREAT!
-function SetupEvaluator(d,f,g)
-    if (d.ng > 0) && d.has_nlobj
-        d.fg = x -> vcat(f(x),g(x))
-    elseif has_nlobj
-        d.fg = x -> f(x)
-    else
-        d.fg = x -> g(x)
-    end
-    d.diff_result = DiffResults.JacobianResult(x)
+function reform_1!(out,y,f,g,h,np,ng,nx)
+    out[1] = f(y[1:np],y[(np+1):(np+nx)])
+    out[2:(ng+1)] = g(y[1:np],y[(np+1):(np+nx)])
+    out[(ng+2):(nx+ng+1)] = h(y[1:np],y[(np+1):(np+nx)])
+    out[(2+ng+nx):(1+ng+2*nx)] = -out[(ng+2):(nx+ng+1)]
 end
 
+function reform_2!(out,y,g,h,np,ng,nx)
+    out[1:ng] = g(y[1:np],y[(np+1):(np+nx)])
+    out[(ng+1):(nx+ng)] = h(y[1:np],y[(np+1):(np+nx)])
+    out[(1+ng+nx):(ng+2*nx)] = -h(y[1:np],y[(np+1):(np+nx)])
+end
+
+function reform_3!(out,y,f,h,np,nx)
+    out[1] = f(y[1:np],y[(np+1):(np+nx)])
+    out[2:(nx+1)] = h(y[1:np],y[(np+1):(np+nx)])
+    out[(nx+2):(2*nx+1)] = -out[2:(nx+1)]
+end
 
 # LOOKS GREAT!
-function calc_functions!(d::ImplicitUpperEvaluator,p)
-    if (d.last_p != p)
+function build_upper_evaluator!(d::ImplicitUpperEvaluator; obj = nothing, constr = nothing,
+                                impfun = nothing, np::Int = 0, nx::Int = 0, ng::Int = 0,
+                                user_sparse::Vector{Tuple{Int64,Int64}} = nothing)
+    d.ny = np + nx
+    d.ng = ng
+    if (d.ng > 0 && obj != nothing)
+        d.fg = (out,x) -> reform_1!(out,x,obj,constr,impfun,np,ng,nx)
+        d.has_nlobj = true
+    elseif (obj == nothing)
+        d.fg = (out,x) -> reform_2!(out,x,constr,impfun,np,ng,nx)
+    else
+        d.fg = (out,x) -> reform_3!(out,x,obj,impfun,np,nx)
+        d.has_nlobj = true
+    end
+    d.value_storage = (obj != nothing) ? zeros(1+ng+2*nx) : zeros(ng+2*nx)
+    d.diff_result = (obj != nothing) ? zeros(1+ng+2*nx,np+nx) : zeros(ng+2*nx,np+nx)
+    d.last_y = zeros(d.ny)
+    d.diff_tape = ReverseDiff.JacobianTape(d.fg, zeros(1+ng+2*nx), d.last_y)
+    if length(d.diff_tape) < RD_COMPILE_SWITCH
+        d.diff_tape = ReverseDiff.compile(d.diff_tape)
+    end
+end
+
+# LOOKS GREAT!
+function calc_functions!(d::ImplicitUpperEvaluator,y)
+    if (d.last_y != y)
         if ~d.disable_1storder
-            ForwardDiff.jacobian!(d.diff_result, d.fg, p, d.diff_config)
-            d.value_storage = DiffResults.value(d.diff_result)
-            d.jacobian_storage = DiffResults.jacobian(d.diff_result)
-        else
-            d.value_storage = d.fg(p)
+            d.fg(d.value_storage,y)
+            out = ReverseDiff.jacobian!(d.diff_tape, y)
+            ReverseDiff.jacobian!(d.diff_result, d.diff_tape, y)
         end
+        d.fg(d.value_storage,y)
         d.func_eval = true
     end
 end
 
 # LOOKS GREAT!
-function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
+function MOI.eval_objective(d::ImplicitUpperEvaluator, y)
     d.eval_objective_timer += @elapsed begin
         val = 0.0
         if (d.has_nlobj)
-            calc_functions!(d,p)
+            calc_functions!(d,y)
             val = d.value_storage[1]
         else
             error("No nonlinear objective.")
@@ -67,16 +105,16 @@ function MOI.eval_objective(d::ImplicitUpperEvaluator, p)
 end
 
 # LOOKS GREAT!
-function MOI.eval_constraint(d::ImplicitUpperEvaluator, g, p)
+function MOI.eval_constraint(d::ImplicitUpperEvaluator, g, y)
     d.eval_constraint_timer += @elapsed begin
-        if d.ng > 0
-            calc_functions!(d,p)
+        if (d.ng+d.nx) > 0
+            calc_functions!(d,y)
             g[:] = d.value_storage[2:end]
         end
     end
     return
 end
-
+#=
 # LOOKS GREAT!
 function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, p)
     d.eval_objective_timer += @elapsed begin
@@ -185,3 +223,4 @@ function MOI.initialize(d::ImplicitUpperEvaluator, requested_features::Vector{Sy
 MOI.objective_expr(d::ImplicitUpperEvaluator) = error("EAGO.ImplicitUpperEvaluator doesn't provide expression graphs of constraint functions.")
 #LOOKS GREAT
 MOI.constraint_expr(d::ImplicitUpperEvaluator) = error("EAGO.ImplicitUpperEvaluator doesn't provide expression graphs of constraint functions.")
+=#

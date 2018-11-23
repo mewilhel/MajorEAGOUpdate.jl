@@ -1,51 +1,64 @@
 #@testset "Implicit Lower Evaluator" begin
 #end
 
-p = ; g = ; df = ; y = ; w = ;
-
-lower_eval = ImplicitLowerEvaluator{3}()
+lower_eval = ImplicitLowerEvaluator{1}()
 test1 = lower_eval.obj_eval == false
 
-relax_implicit!(lower_eval,p)
-test2 = d.ref_p
-test3 = d.P
-test4 = d.X
-test5 = d.state_relax
-test6 = d.state_ref_relaxation
-test7 = d.obj_eval
-test8 = d.cnstr_eval
+f_obj(x,p) = x[1]
+g_constr(x,p) = [-1.0*x[1], 1.0*p[1]]
+h_imp(x,p) = [x[1]^2 + p[1]*x[1] + 4]
 
-relax_objective!(lower_eval)
+pl = 6.0; p = 7.5; pu = 9.0; xl = -0.78; xu = -0.4;
+np = 1; nx = 1; ng = 2;
+user_sparse = [(1,1)]
+
+build_lower_evaluator!(lower_eval, obj = f_obj, constr = g_constr,
+                       impfun = h_imp, np = np, nx = nx, ng = ng,
+                       user_sparse = user_sparse)
+
+lower_eval.current_node = EAGO.NodeBB(Float64[pl, xl],Float64[pu, xu],-Inf,Inf,1,1,false)
+lower_eval.last_node =  EAGO.NodeBB(Float64[],Float64[],-Inf,Inf,1,1,false)
+
+EAGO.relax_implicit!(lower_eval,p)
+test2 = lower_eval.ref_p
+test3 = lower_eval.P
+test4 = lower_eval.X
+test5 = lower_eval.state_relax
+test6 = lower_eval.state_ref_relaxation
+test7 = lower_eval.obj_eval
+test8 = lower_eval.cnstr_eval
+
+EAGO.relax_objective!(lower_eval)
 test9 = lower_eval.obj_relax
 test10 = lower_eval.obj_eval == true
 
-relax_constraints!(lower_eval)
-test11 = d.cnstr_relax
-test12 = d.cnstr_eval == true
+EAGO.relax_constraints!(lower_eval)
+test11 = lower_eval.cnstr_relax
+test12 = lower_eval.cnstr_eval == true
 
 test12 = MOI.eval_objective(lower_eval, p)
 
-g = ###
+g = zeros(2)
 MOI.eval_constraint(lower_eval, g, p)
 test13 = g
 
-df = ###
+df = zeros(1)
 MOI.eval_objective_gradient(lower_eval, df, p)
 test14 = df
 
 test15 = MOI.jacobian_structure(lower_eval)
 
-dg = ###
+dg = zeros(2,1)
 MOI.eval_constraint_jacobian(lower_eval,dg,p)
 test16 = dg
 
-w = ###
-y = ###
+w = zeros(2)
+y = zeros(2)
 MOI.eval_constraint_jacobian_product(lower_eval, y, p, w)
 test17 = y
 
-w = ###
-y = ###
+w = zeros(2)
+y = zeros(2)
 MOI.eval_constraint_jacobian_transpose_product(lower_eval, y, p, w)
 test17 = y
 
@@ -66,3 +79,45 @@ MOI.constraint_expr(lower_eval)
 #@testset "Implicit Upper Evaluator" begin
 #end
 upper_eval = ImplicitUpperEvaluator()
+test00 = upper_eval
+
+y = [p; -0.6]
+
+build_upper_evaluator!(upper_eval, obj = f_obj, constr = g_constr,
+                       impfun = h_imp, np = np, nx = nx, ng = ng,
+                       user_sparse = user_sparse)
+
+EAGO.calc_functions!(upper_eval,y)
+test10 = upper_eval.func_eval
+test11 = upper_eval.value_storage
+
+
+test12 = MOI.eval_objective(upper_eval, p)
+
+g = zeros(4)
+MOI.eval_constraint(lower_eval, g, p)
+test13 = g
+
+#=
+df = zeros(1)
+MOI.eval_objective_gradient(lower_eval, df, p)
+test14 = df
+
+test15 = MOI.jacobian_structure(lower_eval)
+
+dg = zeros(2,1)
+MOI.eval_constraint_jacobian(lower_eval,dg,p)
+test16 = dg
+
+w = zeros(2)
+y = zeros(2)
+MOI.eval_constraint_jacobian_product(lower_eval, y, p, w)
+test17 = y
+
+w = zeros(2)
+y = zeros(2)
+MOI.eval_constraint_jacobian_transpose_product(lower_eval, y, p, w)
+test17 = y
+
+features = MOI.features_available(lower_eval)
+=#
