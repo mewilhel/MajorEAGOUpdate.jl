@@ -27,7 +27,7 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
         if ~isempty(src.NonlinearVariable)
             if MOI.supports(trg, MOI.NLPBlock())
                 evaluator = src.WorkingEvaluatorBlock.evaluator
-                evaluator.current_node = n
+                set_current_node!(evaluator,n)
                 nlp_data = MOI.NLPBlockData(src.NLPData.constraint_bounds,
                                             evaluator,
                                             src.NLPData.has_objective)

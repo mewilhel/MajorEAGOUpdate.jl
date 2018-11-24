@@ -13,6 +13,7 @@ mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
 
     np::Int
     ny::Int
+    nx::Int
     ng::Int
     last_y::Vector{Float64}
     diff_result
@@ -20,16 +21,28 @@ mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
 
     value_storage::Vector{Float64}
     jacobian_storage::VecOrMat{Float64}
+    jacobian_sparsity::Vector{Tuple{Int64,Int64}}
     eval_objective_timer::Float64
     eval_constraint_timer::Float64
     eval_objective_gradient_timer::Float64
     eval_constraint_jacobian_timer::Float64
     eval_hessian_lagrangian_timer::Float64
+
     function ImplicitUpperEvaluator()
+
         d = new()
+
         d.disable_1storder = false
         d.has_nlobj = false
         d.func_eval = false
+        d.jacobian_sparsity = Tuple{Int64,Int64}[]
+
+        d.eval_objective_timer = 0.0
+        d.eval_constraint_timer = 0.0
+        d.eval_objective_gradient_timer = 0.0
+        d.eval_constraint_jacobian_timer = 0.0
+        d.eval_hessian_lagrangian_timer = 0.0
+
         return d
     end
 end
@@ -57,8 +70,10 @@ end
 function build_upper_evaluator!(d::ImplicitUpperEvaluator; obj = nothing, constr = nothing,
                                 impfun = nothing, np::Int = 0, nx::Int = 0, ng::Int = 0,
                                 user_sparse::Vector{Tuple{Int64,Int64}} = nothing)
+    d.nx = nx
     d.ny = np + nx
     d.ng = ng
+    d.np = np
     if (d.ng > 0 && obj != nothing)
         d.fg = (out,x) -> reform_1!(out,x,obj,constr,impfun,np,ng,nx)
         d.has_nlobj = true
@@ -114,13 +129,13 @@ function MOI.eval_constraint(d::ImplicitUpperEvaluator, g, y)
     end
     return
 end
-#=
+
 # LOOKS GREAT!
-function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, p)
+function MOI.eval_objective_gradient(d::ImplicitUpperEvaluator, df, y)
     d.eval_objective_timer += @elapsed begin
         if d.has_nlobj
-            calc_functions!(d,p)
-            df[:] = d.jacobian_storage[1,1:d.np]
+            calc_functions!(d,y)
+            df[:] = d.diff_result[1,1:d.ny]
         else
             error("No nonlinear objective.")
         end
@@ -150,27 +165,26 @@ function _hessian_lagrangian_structure(d::ImplicitUpperEvaluator)
 end
 
 # LOOKS GREAT!
-function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator, dg, p)
+function MOI.eval_constraint_jacobian(d::ImplicitUpperEvaluator, dg, y)
     #d.eval_constraint_jacobian_timer += @elapsed begin
-        if d.ng > 0
-            calc_functions!(d,p)
-            dg[:,:] = jacobian_storage[2:end,:]
+        if d.ng+d.nx > 0
+            calc_functions!(d,y)
+            dg[:,:] = d.diff_result[2:end,:]
         end
     #end
     return
 end
 
 # FIX ME
-function MOI.eval_constraint_jacobian_product(d::ImplicitUpperEvaluator, y, p, w)
+function MOI.eval_constraint_jacobian_product(d::ImplicitUpperEvaluator, out, y, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
-            forward_reverse_pass(d,p)
-            t = typeof(d.constraints[1].setstorage[1])
-            y = zeros(t,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
-            for i in 1:length(d.constraints)
-                if ~d.constraints[i].numvalued[1]
-                    for j in 1:d.variable_number
-                        y[i] += d.constraints[i].setstorage[1].cv_grad[j]*w[j]
+            if d.ng+d.nx > 0
+                calc_functions!(d,y)
+                fill!(out,0.0)
+                for j in 1:d.ny
+                    for i in 1:(d.ng+2*d.nx)
+                        y[i] += d.diff_result[i+1,j]*w[j]
                     end
                 end
             end
@@ -185,14 +199,11 @@ end
 function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitUpperEvaluator, y, p, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
-            forward_reverse_pass(d,p)
-            #t = typeof(d.constraints[1].setstorage[1])
-            y = zeros(Float64,length(d.constraints[1].setstorage[1].cv_grad),length(d.constraints))
-            for i in 1:length(d.constraints)
-                if ~d.constraints[i].numvalued[1]
-                    for j in 1:d.variable_number
-                        y[i] += d.constraints[i].setstorage[1].cv_grad[j]*w[j]
-                    end
+            if d.ng+d.nx > 0
+                calc_functions!(d,y)
+                fill!(out,0.0)
+                for i in 1:(d.ng+2*d.nx)
+                    y[i] += d.diff_result[i+1,:]*w
                 end
             end
         end
@@ -223,4 +234,3 @@ function MOI.initialize(d::ImplicitUpperEvaluator, requested_features::Vector{Sy
 MOI.objective_expr(d::ImplicitUpperEvaluator) = error("EAGO.ImplicitUpperEvaluator doesn't provide expression graphs of constraint functions.")
 #LOOKS GREAT
 MOI.constraint_expr(d::ImplicitUpperEvaluator) = error("EAGO.ImplicitUpperEvaluator doesn't provide expression graphs of constraint functions.")
-=#

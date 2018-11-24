@@ -128,6 +128,10 @@ function build_lower_evaluator!(d::ImplicitLowerEvaluator; obj = nothing, constr
     end
 end
 
+function set_current_node!(x::ImplicitLowerEvaluator,n::NodeBB)
+    x.current_node = n
+end
+
 # LOOKS GREAT!
 function relax_implicit!(d::ImplicitLowerEvaluator,p)
     # Generate new parameters for implicit relaxation if necessary

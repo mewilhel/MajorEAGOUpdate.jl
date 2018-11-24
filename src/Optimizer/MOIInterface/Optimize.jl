@@ -1,4 +1,6 @@
-function MOI.optimize!(m::Optimizer)
+function TrivFunction(x) end
+
+function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = (1,))
 
     ########### Reformulate DAG using auxilliary variables ###########
     #LoadDAG!(m); LabelDAG!(m)
@@ -79,6 +81,8 @@ function MOI.optimize!(m::Optimizer)
     #m.LowerProblem(m,m.Stack[1])
     #m.UpperProblem(m,m.Stack[1])
     #m.Postprocess(m,m.Stack[1])
+
+    CustomPreprocessing!(m)
 
     # Runs the branch and bound routine
     SolveNLP!(m)

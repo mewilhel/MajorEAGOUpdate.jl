@@ -21,7 +21,6 @@
 =#
 end
 
-
 @testset "Test B&B Checks" begin
     B = EAGO.Optimizer()
     B.VariableNumber = 2
@@ -83,7 +82,6 @@ end
     @test length(B.Stack) == 1
     @test B.Stack[2].LowerBound == -5.0
 end
-
 
 @testset "Node Selection" begin
     B = EAGO.Optimizer()

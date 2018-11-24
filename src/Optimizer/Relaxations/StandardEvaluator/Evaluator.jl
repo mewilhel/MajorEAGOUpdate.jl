@@ -84,6 +84,10 @@ mutable struct Evaluator{T<:Real} <: MOI.AbstractNLPEvaluator
     end
 end
 
+function set_current_node!(x::Evaluator,n::NodeBB)
+    x.current_node = n
+end
+
 eltype(x::Evaluator{T}) where T  = T
 
 include("Univariate.jl")

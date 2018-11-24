@@ -92,32 +92,31 @@ test10 = upper_eval.func_eval
 test11 = upper_eval.value_storage
 
 
-test12 = MOI.eval_objective(upper_eval, p)
+test12 = MOI.eval_objective(upper_eval, y)
 
 g = zeros(4)
-MOI.eval_constraint(lower_eval, g, p)
+MOI.eval_constraint(upper_eval, g, y)
 test13 = g
 
-#=
-df = zeros(1)
-MOI.eval_objective_gradient(lower_eval, df, p)
+df = zeros(2)
+MOI.eval_objective_gradient(upper_eval, df, y)
 test14 = df
 
-test15 = MOI.jacobian_structure(lower_eval)
+test15 = MOI.jacobian_structure(upper_eval)
 
-dg = zeros(2,1)
-MOI.eval_constraint_jacobian(lower_eval,dg,p)
+dg = zeros(4,2)
+MOI.eval_constraint_jacobian(upper_eval,dg,y)
 test16 = dg
 
+#=
 w = zeros(2)
-y = zeros(2)
-MOI.eval_constraint_jacobian_product(lower_eval, y, p, w)
+out = zeros(4)
+MOI.eval_constraint_jacobian_product(upper_eval, out, y, w)
 test17 = y
 
 w = zeros(2)
-y = zeros(2)
-MOI.eval_constraint_jacobian_transpose_product(lower_eval, y, p, w)
+out = zeros(4)
+MOI.eval_constraint_jacobian_transpose_product(upper_eval, out, y, w)
 test17 = y
-
-features = MOI.features_available(lower_eval)
 =#
+features = MOI.features_available(upper_eval)
