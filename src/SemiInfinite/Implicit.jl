@@ -1,3 +1,9 @@
+SolveImplicit(f::Function, g::Function, h::Function,
+                       xl::Vector{Float64}, xu::Vector{Float64},
+                       pl::Vector{Float64}, pu::Vector{Float64},
+                       opt::Optimizer; user_sparsity::Vector{Tuple{Int64,Int64}} = sparse_pattern)
+
+
 function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPopt::SIP_opts)
 
   # initializes solution
@@ -26,6 +32,11 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
 
   sip_sto = SIP_result()
 
+  # Set senses for appropriate optimizer
+  MOI.set(SIPopt.LBP_Opt, MOI.ObjectiveSense(), MOI.MinSense)
+  MOI.set(SIPopt.UBP_Opt, MOI.ObjectiveSense(), MOI.MinSense)
+  MOI.set(SIPopt.LLP_Opt, MOI.ObjectiveSense(), MOI.MaxSense)
+
   # checks inputs
   if (SIPopt.r0<=1)
     error("r0 must be greater than 1")
@@ -47,21 +58,15 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
 
     ##### lower bounding problem #####
     if (~isempty(P_LBD))
-        LBD_X_low,LBD_X_high,refnx,snx = Reform_Imp_Y(X,Y,P_LBD)
-
-        gLBP = x -> BndProb_reform(x,nothing,gSIP,P_LBD,0.0) # reformulate constraints
-        gL_LBP = [-Inf for i=1:length(P_LBD)]
-        gU_LBP = [0.0 for i=1:length(P_LBD)]
+        # FIX REFORMULATIONS
+        LBD_X_low,LBD_X_high,LBD_Y_low,LBD_Y_high = Reform_Imp_Y(X,Y,P_LBD)
+        gLBP = (y,x) -> BndProb_reform(x,nothing,gSIP,P_LBD,0.0) # reformulate constraint
         mLBP = deepcopy(SIPopt.LBP_Opt)
-        LBP_vars = EAGO.loadscript_implicit!(mLBP, nx, length(P_LBD), X_low, X_high,gL_LBP, gU_LBP, MOI.MinSense, f, gLBP)
+        LBP_vars, mLBP = SolveImplicit(h, LBD_Y_low, LBD_Y_high, LBD_X_low, LBD_X_high, mLBP, f = f, g = gLBP, hj = hj)
     else
-        gLBP = x -> BndProb_reform(x,nothing,gSIP,P_LBD,0.0) # reformulate constraints
-        gL_LBP = [-Inf for i=1:length(P_LBD)]
-        gU_LBP = [0.0 for i=1:length(P_LBD)]
+        LBP_vars, mLBP = SolveScript(f, LBD_X_low, LBD_X_high, mLBP, f = f)
     end
-    MOI.optimize!(mLBP)
 
-    # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(mLBP, MOI.TerminationStatus())
     tLBP = MOI.get(mLBP, MOI.SolveTime())
     if (termination_status == MOI.Success)
@@ -72,11 +77,13 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
         else
           feas = true
           LBDg = MOI.get(mLBP, MOI.ObjectiveValue())
-          xbar = MOI.get(mLBP, MOI.VariablePrimal(), LBP_vars)
+          xbar = MOI.get(mLBP, MOI.VariablePrimal(), LBP_vars[1:nx])
         end
     else
       error("Optimizer did not successfully terminate")
     end
+
+    # Process output info and save to CurrentUpperInfo object
 
     sip_sto.LBP_time += tLBP
     sip_sto.LBD = LBDg
@@ -93,9 +100,9 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
 
     ##### inner program #####
     mLLP1 = deepcopy(SIPopt.LLP_Opt)
-    LLP1_vars = EAGO.loadscript_implicit!(mLLP1, np, 0, P_low, P_high,
-                              Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
-    MOI.optimize!(mLLP1)
+    inner_h, inner_hj = Reform_HHJ(h,hj,xbar)
+    LLP1_vars, mLLP1 = SolveImplicit(inner_h, LBD_Y_low, LBD_Y_high, pl, pu, mLLP1,
+                                     f = (y,p) -> gSIP(xbar,y,p), hj = inner_hj)
 
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(mLLP1, MOI.TerminationStatus())
@@ -108,7 +115,7 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
         else
           feas = true
           INNg1 = MOI.get(mLLP1, MOI.ObjectiveValue())
-          pbar = MOI.get(mLLP1, MOI.VariablePrimal(), LLP1_vars)
+          pbar = MOI.get(mLLP1, MOI.VariablePrimal(), LLP1_vars[1:np])
         end
     else
       error("Optimizer did not successfully terminate")
@@ -132,14 +139,15 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
     end
 
     ##### upper bounding problem #####
-    gUBP = x -> BndProb_reform(x,nothing,gSIP,P_UBD,eps_g)
-    gL_UBP = [-Inf for i=1:length(P_UBD)]
-    gU_UBP = [0.0 for i=1:length(P_UBD)]
-
-    mUBP = deepcopy(SIPopt.UBP_Opt)
-    mUBP_vars = EAGO.loadscript_implicit!(mUBP, nx, length(P_UBD), X_low, X_high,
-                                 gL_UBP, gU_UBP, MOI.MinSense, f, gUBP)
-    MOI.optimize!(mUBP)
+    if (~isempty(P_UBD))
+        # FIX REFORMULATIONS
+        LBD_X_low,LBD_X_high,LBD_Y_low,LBD_Y_high,refnx,snx = Reform_Imp_Y(X,Y,P_UBD)
+        gUBP = (y,x) -> BndProb_reform(x,nothing,gSIP,P_UBD,eps_g) # reformulate constraint
+        mUBP = deepcopy(SIPopt.UBP_Opt)
+        UBP_vars, mUBP = SolveImplicit(h, LBD_Y_low, LBD_Y_high, LBD_X_low, LBD_X_high, mUBP, f = f, g = gUBP, hj = hj)
+    else
+        UBP_vars, mUBP = SolveScript(f, LBD_X_low, LBD_X_high, mUBP, f = f)
+    end
 
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(mUBP, MOI.TerminationStatus())
@@ -152,7 +160,7 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
         else
           feas = true
           UBD_temp = MOI.get(mUBP, MOI.ObjectiveValue())
-          xbar = MOI.get(mUBP, MOI.VariablePrimal(), mUBP_vars)
+          xbar = MOI.get(mUBP, MOI.VariablePrimal(), mUBP_vars[1:nx])
         end
     else
       error("Optimizer did not successfully terminate")
@@ -169,9 +177,9 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
 
       ##### inner program #####
       mLLP2 = deepcopy(SIPopt.LLP_Opt)
-      mLLP2_vars = EAGO.loadscript_implicit!(mLLP2, np, 0, P_low, P_high,
-                                   Float64[], Float64[], MOI.MinSense, p -> -gSIP(xbar,p), [])
-      MOI.optimize!(mLLP2)
+      inner_h, inner_hj = Reform_HHJ(h,hj,xbar)
+      LLP2_vars, mLLP2 = SolveImplicit(inner_h, LBD_Y_low, LBD_Y_high, pl, pu, mLLP2,
+                                       f = (y,p) -> gSIP(xbar,y,p), hj = inner_hj)
 
       # Process output info and save to CurrentUpperInfo object
       termination_status = MOI.get(mLLP2, MOI.TerminationStatus())
@@ -184,7 +192,7 @@ function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPo
           else
             feas = true
             INNg2 = MOI.get(mLLP2, MOI.ObjectiveValue())
-            pbar = MOI.get(mLLP2, MOI.VariablePrimal(), mLLP2_vars)
+            pbar = MOI.get(mLLP2, MOI.VariablePrimal(), mLLP2_vars[1:np])
           end
       else
         error("Optimizer did not successfully terminate")

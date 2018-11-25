@@ -1,3 +1,11 @@
+
+function Reform_HHJ(h::Function,hj::Function,xbar::Function)
+  hout = (y,p) -> h(xbar,y,p)
+  hjout = (y,p) -> hj(xbar,y,p)
+  return hout, hjout
+end
+
+
 """
 --------------------------------------------------------------------------------
 Function: BndProb_reform
@@ -106,8 +114,10 @@ function Reform_Imp_Y(xL::Vector{Float64},xU::Vector{Float64},yL::Vector{Float64
   nx::Int = length(X)
   ny::Int = length(Y)
   np::Int = length(P)
-  Y_reform_lo::Vector{Float64} = zeros(nx+ny*np)
-  Y_reform_hi::Vector{Float64} = zeros(nx+ny*np)
+  Y_reform_lo::Vector{Float64} = zeros(ny*np)
+  Y_reform_hi::Vector{Float64} = zeros(ny*np)
+  X_reform_lo::Vector{Float64} = zeros(nx)
+  X_reform_hi::Vector{Float64} = zeros(nx)
   count::Int = 1
   for i=1:np
     for j=1:ny
@@ -116,12 +126,13 @@ function Reform_Imp_Y(xL::Vector{Float64},xU::Vector{Float64},yL::Vector{Float64
       count += 1
     end
   end
+  count = 1
   for j=1:nx
-    Y_reform_lo[count] = xL[j]
-    Y_reform_hi[count] = xU[j]
+    X_reform_lo[count] = xL[j]
+    X_reform_hi[count] = xU[j]
     count += 1
   end
-  return Y_reform_lo, Y_reform_hi, ny*np, nx+ny*np
+  return X_reform_lo, X_reform_hi, Y_reform_lo, Y_reform_hi
 end
 #=
 function Reform_Imp_Y(X::Vector{Interval{Float64}},Y::Vector{Interval{Float64}},P::Vector{Any})

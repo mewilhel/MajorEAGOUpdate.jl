@@ -63,20 +63,23 @@ differentiable or nonsmooth fashion as specified by the `MC_param.mu flag`.
 function Final_Cut(x_mc::MC{N},x_mc_int::MC{N}) where N
   if (MC_param.mu < 1)
     Intv = x_mc.Intv ∩ x_mc_int.Intv
-    if (x_mc.cc <= x_mc_int.cc)
+    if (x_mc.cc < x_mc_int.cc)
       cc = x_mc.cc
       cc_grad::SVector{N,Float64} = x_mc.cc_grad
     else
+      #println("assign cc_int: $(x_mc_int.cc)")
       cc = x_mc_int.cc
       cc_grad = x_mc_int.cc_grad
     end
-    if (x_mc.cv >= x_mc_int.cv)
+    #println("cc: $cc")
+    if (x_mc.cv > x_mc_int.cv)
       cv = x_mc.cv
       cv_grad::SVector{N,Float64} = x_mc.cv_grad
     else
       cv = x_mc_int.cv
       cv_grad = x_mc_int.cv_grad
     end
+    #println("cv: $cv")
     x_mc::MC{N} = MC{N}(cv,cc,(x_mc.Intv ∩ x_mc_int.Intv),cv_grad,cc_grad,x_mc.cnst)
   else
     x_mc = Smooth_Cut(x_mc,x_mc_int)

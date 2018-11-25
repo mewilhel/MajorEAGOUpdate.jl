@@ -12,10 +12,11 @@ function ImplicitMod(opt::Optimizer,args)
     end
 end
 
-function SolveImplicit(f::Function, g::Function, h::Function,
+function SolveImplicit(h::Function,
                        xl::Vector{Float64}, xu::Vector{Float64},
                        pl::Vector{Float64}, pu::Vector{Float64},
-                       opt::Optimizer; user_sparsity::Vector{Tuple{Int64,Int64}} = sparse_pattern)
+                       opt::Optimizer; f::Function = f, g::Function = g, hj::Function = hj,
+                       user_sparsity::Vector{Tuple{Int64,Int64}} = sparse_pattern)
 
     #
     @assert length(pl) == length(pu)
@@ -48,20 +49,10 @@ function SolveImplicit(f::Function, g::Function, h::Function,
                            nx = nx, np = np, nx = nx, ng = ng,
                            user_sparse = sparse_pattern)
 
-    # Add nlp data blocks ("SHOULD" BE THE LAST THING TO DO) 
+    # Add nlp data blocks ("SHOULD" BE THE LAST THING TO DO)
 
     # Optimizes the model with load function
     MOI.optimize!(opt, CustomMod! = ImplicitMod, CustomModArgs = (ImpLowerEval,ImpUpperEval))
 
-    # outputs the results
-    pval = zeros(np); xval = zeros(nx)
-    fval = MOI.get(opt, MOI.ObjectiveValue())
-    for i in 1:np
-        pval[i] = MOI.get(opt, MOI.VariablePrimal(), var_EAGO[i])
-    end
-    for j in (np+1):(np+nx)
-        xval[j] = MOI.get(opt, MOI.VariablePrimal(), var_EAGO[j])
-    end
-    status = MOI.get(opt, MOI.TerminationStatus())
-    return fval,pval,xval,status
+    return var,opt
 end

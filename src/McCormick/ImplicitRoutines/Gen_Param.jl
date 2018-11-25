@@ -2,6 +2,8 @@ function PMC_Kernel!(h::Function,hj::Function,z_mc::Vector{MC{N}},
                        aff_mc::Vector{MC{N}},p_mc::Vector{MC{N}},
                        x_mc::Vector{MC{N}},opt::mc_opts) where N
   H,J = PreconditionMC(h,hj,z_mc,aff_mc,p_mc,opt)
+  #println("preconditioned H: $H")
+  #println("preconditioned J: $J")
   if (opt.CTyp == :Newton)
     if (opt.LAlg == :Dense)
       MC_Dense_Newton_GS!(z_mc,x_mc,J,H,opt)
