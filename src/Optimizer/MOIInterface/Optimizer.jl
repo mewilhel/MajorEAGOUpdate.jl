@@ -194,6 +194,31 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
         m = new()
 
+        default_opt_dict = Dict{Symbol,Any}()
+
+        # set fallback for potentially user defined functions
+        for i in (:LowerProblem, :UpperProblem, :Preprocess, :Postprocess, :RepeatCheck,
+                  :ConvergenceCheck, :TerminationCheck, :NodeStorage, :NodeSelection,
+                  :BisectionFunction, :CutCondition, :AddCut)
+                  default_opt_dict[i] = DummyFunction
+        end
+
+        # set fallback for optimizers
+        for i in (:LPOptimizer, :MILPOptimizer, :NLPOptimizer, :MINLPOptimizer,
+                  :InitialRelaxedOptimizer, :WorkingRelaxedOptimizer,
+                  :InitialUpperOptimizer, :WorkingUpperOptimizer)
+            default_opt_dict[i] = DummyOptimizer()
+        end
+
+        default_opt_dict[:Relaxation] = DefaultRelaxationScheme()
+
+        for i in keys(default_opt_dict)
+            if (haskey(options,i))
+                setfield!(m, i, options[i])
+            end
+        end
+
+        println("options: $options")
         m.Debug1 = []
         m.Debug2 = []
         m.InputModel = 0
@@ -240,23 +265,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.BiQuadraticGEQConstraints = Tuple{Float64,Float64,Float64,Float64,Float64,Float64,Int,Int}[]
         m.BiQuadraticEQConstraints = Tuple{Float64,Float64,Float64,Float64,Float64,Float64,Int,Int}[]
 
-        m.LowerProblem = DummyFunction                         # Stores lower problem function
-        m.UpperProblem = DummyFunction                         # Stores upper problem function
-        m.Preprocess = DummyFunction                           # Preprocessing function
-        m.Postprocess = DummyFunction                          # Post processing function
-        m.RepeatCheck = DummyFunction                          # Repeation check
-        m.ConvergenceCheck = DummyFunction                     # Convergence criterion
-        m.TerminationCheck = DummyFunction                     # Stores termination check function
-        m.NodeStorage = DummyFunction                          # Stores branching function
-        m.NodeSelection = DummyFunction                        # Stores node selection function
-        m.BisectionFunction = DummyFunction                    # Stores branching function
-        m.NodeSelection = DummyFunction                        # Stores node selection function
-        m.BisectionFunction = DummyFunction                    # Stores branching function
-        m.CutCondition = DummyFunction
-        m.AddCut = DummyFunction
-
-        m.Relaxation = DefaultRelaxationScheme()
-
         m.CurrentLowerInfo = LowerInfo()
         m.CurrentUpperInfo = UpperInfo()
         m.CurrentPreprocessInfo = PreprocessInfo()
@@ -264,16 +272,6 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
         m.Objective = nothing
         m.ObjectiveConvexity = false
-
-        m.LPOptimizer = DummyOptimizer()
-        m.MILPOptimizer = DummyOptimizer()
-        m.NLPOptimizer = DummyOptimizer()
-        m.MINLPOptimizer = DummyOptimizer()
-
-        m.InitialRelaxedOptimizer = DummyOptimizer()
-        m.WorkingRelaxedOptimizer = DummyOptimizer()
-        m.InitialUpperOptimizer = DummyOptimizer()
-        m.WorkingUpperOptimizer = DummyOptimizer()
 
         m.GlobalLowerBound = -Inf
         m.GlobalUpperBound = Inf
@@ -297,8 +295,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.FailedSolver = NoFailure
 
         # Output specification fields
-        m.Verbosity = 0
-        #m.Verbosity = 3
+        #m.Verbosity = 0
+        m.Verbosity = 3
         m.WarmStart = false
         m.OutputInterations = 10
         m.HeaderInterations = 100
@@ -342,6 +340,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.RelativeTolerance = 1E-4
         m.ExhaustiveSearch = false
         m.FirstRelaxed = false
+
+        println("m: $m")
 
         return m
     end

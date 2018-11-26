@@ -23,7 +23,7 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
             end
         end
     else
-        #RelaxQuadratic!(trg,src,n,r)
+        RelaxQuadratic!(trg,src,n,r)
         if ~isempty(src.NonlinearVariable)
             if MOI.supports(trg, MOI.NLPBlock())
                 evaluator = src.WorkingEvaluatorBlock.evaluator

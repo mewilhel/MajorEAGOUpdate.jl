@@ -2,6 +2,11 @@ function TrivFunction(x) end
 
 function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = (1,))
 
+    println("pre optimize initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
+    println("pre optimize working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
+
+    println("m.VariableInfo: $(m.VariableInfo)")
+
     ########### Reformulate DAG using auxilliary variables ###########
     #LoadDAG!(m); LabelDAG!(m)
     #NewVariableSize,NewVariableIndex = ProcessDAG!(m)
@@ -33,34 +38,38 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     #println("optimize nlp constraint bounds: $(m.NLPData.constraint_bounds)")
     # Get various other sizes
     num_nlp_constraints = length(m.NLPData.constraint_bounds)
+    m.ContinuousSolution = zeros(Float64,NewVariableSize)
+    println("NewVariableSize: $NewVariableSize")
+
+    println("pre default initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
+    println("pre default working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
 
     # Sets any unset functions to default values
     SetToDefault!(m)
 
+    println("post default initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
+    println("post default working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
+
     # Copies variables to upper subproblems
     MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
+    println("m.VariableNumber: $(m.VariableNumber))")
     m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
+    println("m.UpperVariables: $(m.UpperVariables)")
 
     # Copies variables and bounds to lower subproblems
-    PushLowerVariables!(m)
+    #PushLowerVariables!(m)
+    m.UpperVariables = MOI.add_variables(m.InitialRelaxedOptimizer, m.VariableNumber)
 
     # Create initial node and add it to the stack
     CreateInitialNode!(m)
 
     # Build the JuMP NLP evaluator
     evaluator = m.NLPData.evaluator
-    println("typeof(evaluator): $(typeof(evaluator))")
     features = MOI.features_available(evaluator)
-    println("typeof(features): $(typeof(features))")
     has_hessian = (:Hess in features)
-    println("typeof(has_hessian): $(typeof(has_hessian))")
     init_feat = [:Grad]
-    println("typeof(init_fea): $(typeof(init_feat))")
     #has_hessian && push!(init_feat, :Hess)
-    println("has_hessian: $has_hessian")
     num_nlp_constraints > 0 && push!(init_feat, :Jac)
-    println("init_feat: $init_feat")
-    println("num_nlp_constraints: $num_nlp_constraints")
     MOI.initialize(evaluator,init_feat)
 
     # Sets up relaxations terms that don't vary during iterations (mainly linear)
@@ -82,7 +91,7 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     #m.UpperProblem(m,m.Stack[1])
     #m.Postprocess(m,m.Stack[1])
 
-    CustomPreprocessing!(m)
+    CustomMod!(m)
 
     # Runs the branch and bound routine
     SolveNLP!(m)

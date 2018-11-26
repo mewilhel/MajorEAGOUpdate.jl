@@ -1,9 +1,3 @@
-SolveImplicit(f::Function, g::Function, h::Function,
-                       xl::Vector{Float64}, xu::Vector{Float64},
-                       pl::Vector{Float64}, pu::Vector{Float64},
-                       opt::Optimizer; user_sparsity::Vector{Tuple{Int64,Int64}} = sparse_pattern)
-
-
 function Implicit_SIP_Solve(f::Function,h::Function,hj::Function,gSIP,X,Y,P,SIPopt::SIP_opts)
 
   # initializes solution

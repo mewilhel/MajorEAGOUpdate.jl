@@ -21,6 +21,7 @@ function SolveNLP!(x::Optimizer)
   # terminates when max nodes or iteration is reach, or when node stack is empty
   iterationcountinternal = 0
   while (x.TerminationCheck(x))
+    println("x.CurrentIterationCount: $(x.CurrentIterationCount)")
     iterationcountinternal += 1
     #println("iterationcountinternal: $iterationcountinternal")
     # Fathom nodes with lower bound greater than global upper bound
@@ -92,13 +93,13 @@ function SolveNLP!(x::Optimizer)
         PrintResults!(x,true)
       end
       x.History.CutCount[x.CurrentIterationCount] = x.CutIterations
-      println("post cut, lower feas: $(x.CurrentLowerInfo.Feasibility)")
+      #println("post cut, lower feas: $(x.CurrentLowerInfo.Feasibility)")
       # checks for infeasibility stores solution
       if (x.CurrentLowerInfo.Feasibility)
-        println("lower is feas")
+        #println("lower is feas")
         if (~x.ConvergenceCheck(x))
-          println("didn't converge")
-          println("CurrentNode: $(CurrentNode)")
+          #println("didn't converge")
+          #println("CurrentNode: $(CurrentNode)")
           # Solves upper bounding problem
           #UpperProblemTime = @elapsed x.UpperProblem(x,CurrentNode)
           UpperProblemTime = 0.0
@@ -108,8 +109,8 @@ function SolveNLP!(x::Optimizer)
           UBDTempSaveFlag = true
           PrintResults!(x,false)
 
-          println("Current Upper Value: $(x.CurrentUpperInfo.Value)")
-          println("Current Upper Feasiblity: $(x.CurrentUpperInfo.Feasibility)")
+          #println("Current Upper Value: $(x.CurrentUpperInfo.Value)")
+          #println("Current Upper Feasiblity: $(x.CurrentUpperInfo.Feasibility)")
           # Stores information if better feasible upper bound is formed
           if (x.CurrentUpperInfo.Feasibility)
             if (x.CurrentUpperInfo.Value < x.GlobalUpperBound)
@@ -157,6 +158,6 @@ function SolveNLP!(x::Optimizer)
     x.CurrentIterationCount += 1
   end
 
-  x.SolutionValue = x.GlobalUpperBound           # Sets the solution value found
+  x.ObjectiveValue = x.GlobalUpperBound           # Sets the solution value found
   PrintSolution!(x)                              # Prints the solution
 end

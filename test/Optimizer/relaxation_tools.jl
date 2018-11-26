@@ -183,6 +183,7 @@ EAGO.RelaxQuadratic!(target, model, n)
     @test target.LinearLEQConstraints[6][3] == 2
 end
 
+#=
 @testset "NLP Evaluator" begin
 
     m = Model(with_optimizer(EAGO.Optimizer))
@@ -201,8 +202,10 @@ end
 
     source_evaluator = JuMP.NLPEvaluator(m)
     MOI.initialize(source_evaluator , Symbol[:Grad])
+
     opt = m.moi_backend.model.optimizer
 
+    #=
     # Check build
     built_evaluator = EAGO.Build_NLP_Evaluator(MC{2}, source_evaluator, opt)
 
@@ -257,4 +260,6 @@ end
     @test temp5[1][2] == 1
     @test temp5[2][1] == 1
     @test temp5[2][2] == 2
+    =#
 end
+=#

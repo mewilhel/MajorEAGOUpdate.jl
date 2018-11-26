@@ -32,9 +32,6 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
         df = zeros(Float64,ngrad)
         f = MOI.eval_objective(evaluator, midx)
         MOI.eval_objective_gradient(evaluator, df, midx)
-        #println("f: $f")
-        #println("df: $df")
-        #println("const term: $(f-sum(midx.*df))")
         MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(df, var), f-sum(midx.*df)))
     end
 
@@ -59,36 +56,19 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
                 dg_cc[i,:] = evaluator.constraints[i].setstorage[1].cc_grad
             end
         end
-
-        # nlp block data rearranges rhs to lhs so we can assume that bns is either
-        # (0,Inf), (-Inf,0), (0,0)
         for (j,bns) in enumerate(src.WorkingEvaluatorBlock.constraint_bounds)
             if bns.upper != Inf
-                #println("upper bound")
                 constant = g[j]
                 for i in 1:ngrad
                     constant -= midx[i]*dg[j,i]
                 end
-                #println("constant: $constant")
-                #println("var: $var")
-                #println("coeff: $(dg[j,:])")
-                #println("b: $(bns.upper-constant)")
                 MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(dg[j,:], var), 0.0), MOI.LessThan(bns.upper-constant))
             end
-            #println("lower bound")
             if bns.lower > -Inf
                 constant = g_cc[j]
-                #println("constant: $constant")
                 for i in 1:ngrad
                     constant -= midx[i]*dg_cc[j,i]
-                    #println("midx[i]: $(midx[i])")
-                    #println("dg_cc[j,i]: $(dg_cc[j,i])")
                 end
-                #println("constant: $constant")
-                #println("var: $var")
-                #println("coeff: $(-dg_cc[j,:])")
-                #println("b: $(-bns.lower-constant)")
-                #println("-bns: $(-bns.lower)")
                 MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(-dg_cc[j,:], var), 0.0), MOI.LessThan(constant))
             end
         end

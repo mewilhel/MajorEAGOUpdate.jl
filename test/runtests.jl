@@ -5,12 +5,12 @@ using IntervalArithmetic
 using Test
 using JuMP
 using Ipopt
-using Clp
+using Clp,CPLEX
 
 const EAGO = MajorEAGOUpdate
 const MOI = MathOptInterface
 
-#include("Optimizer/optimizer.jl")
-include("McCormick/mccormick.jl")
+include("Optimizer/optimizer.jl")
+#include("McCormick/mccormick.jl")
 #include("SemiInfinite/semiinfinite.jl")
 #include("ExampleProblems/Bioreactor_ANN.jl")

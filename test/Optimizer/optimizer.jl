@@ -1,4 +1,3 @@
-#=
 println("--- Test Branch and Bound Subroutines ---")
 include("branch_bound.jl")
 
@@ -16,7 +15,9 @@ include("relaxation_tools.jl")
 
 println("--- Test Main Solution Routines ---")
 include("optimize.jl")
-=#
 
+
+#=
 println("--- Test Implicit Optimization Routines ---")
 include("implicit_tools.jl")
+=#

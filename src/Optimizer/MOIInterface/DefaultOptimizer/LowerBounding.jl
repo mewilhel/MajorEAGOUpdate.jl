@@ -31,19 +31,28 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
         #MOI.copy_to(x.WorkingRelaxedOptimizer,x.InitialRelaxedOptimizer)
         x.WorkingRelaxedOptimizer = deepcopy(x.InitialRelaxedOptimizer)
         x.Debug1 = x.InitialRelaxedOptimizer
-        #println("copied initial relaxed solver")
+        println("copied initial relaxed solver")
     end
 
-    Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
-    println("fixed lower variable bounds")
+    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
+    println("NumberOfVariables(): $nvout")
 
+    #Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
+    Update_VariableBounds_Lower1!(x,y,x.WorkingRelaxedOptimizer)
+    #println("fixed lower variable bounds")
+
+    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
+    println("NumberOfVariables(): $nvout")
+
+    RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = true)
     RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
     #println("model was relaxed")
 
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
-    x.Debug2 = x.WorkingRelaxedOptimizer
+    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
+    println("NumberOfVariables(): $nvout")
     MOI.optimize!(x.WorkingRelaxedOptimizer)
     #return x.WorkingRelaxedOptimizer               # CHANGE ME
     #redirect_stdout(tt)
@@ -52,7 +61,7 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
     termination_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.TerminationStatus())
     #println("term status: $termination_status")
     objvalue = MOI.get(x.WorkingRelaxedOptimizer, MOI.ObjectiveValue())
-    #println("objective values: $objvalue")
+    println("objective values: $objvalue")
     if (termination_status == MOI.Success)
         #println("result count number: $(MOI.get(x.WorkingRelaxedOptimizer, MOI.ResultCount()))")
         #@assert MOI.get(x.WorkingRelaxedOptimizer, MOI.ResultCount()) > 0

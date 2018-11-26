@@ -144,6 +144,8 @@ function SetToDefault!(m::Optimizer)
     (m.BisectionFunction == DummyFunction)  &&   (m.BisectionFunction = ContinuousRelativeBisect)
     (m.CutCondition == DummyFunction)       &&   (m.CutCondition = DefaultCutCondition)
     (m.AddCut == DummyFunction)             &&   (m.AddCut = DefaultAddCut)
+    println("set to default initial relaxed: $(m.InitialRelaxedOptimizer)")
+    println("set to default working relaxed: $(m.WorkingRelaxedOptimizer)")
     (typeof(m.InitialRelaxedOptimizer) == DummyOptimizer) && (m.InitialRelaxedOptimizer = Clp.Optimizer())
     (typeof(m.WorkingRelaxedOptimizer) == DummyOptimizer) && (m.WorkingRelaxedOptimizer = Clp.Optimizer())
     (typeof(m.InitialUpperOptimizer) == DummyOptimizer) && (m.InitialUpperOptimizer = Ipopt.Optimizer())
@@ -192,5 +194,37 @@ function PushLowerVariables!(m::Optimizer)
         PushVariableBounds!(var, var_xi, m.InitialRelaxedOptimizer)
         VarTupleLow = PushVariableBounds!(var, var_xi, m.WorkingRelaxedOptimizer)
         push!(m.VariableIndexLow,VarTupleLow)
+    end
+end
+
+function Update_VariableBounds_Lower1!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
+    # Updates variables bounds
+    typevar = m.LowerVariables
+    println("typevar: $typevar")
+    for (i,var) in enumerate(m.VariableInfo)
+        #println("i: $i")
+        #println("var: $var")
+        var_xi = MOI.SingleVariable(typevar[i])
+        #println("var_xi: $var_xi")
+        if var.is_integer
+        else
+            if var.is_fixed
+                #println("ran fixed")
+                MOI.add_constraint(z, var_xi, MOI.EqualTo(y.LowerVar[i]))
+            elseif var.has_lower_bound
+                if var.has_upper_bound
+                    #println("has both bounds")
+                    MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
+                else
+                    #println("has lower bound only")
+                    MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
+                end
+            elseif var.has_upper_bound
+                #println("has upper bound only")
+                MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
+            end
+        end
+        #push!(m.VariableIndexUpp,VarTupleUpp)
     end
 end

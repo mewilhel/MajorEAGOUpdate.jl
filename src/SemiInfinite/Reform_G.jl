@@ -41,67 +41,6 @@ function BndProb_reform(x,g::Function,gSIP::Function,Pset::Vector{Vector{Float64
   return temp
 end
 
-
-"""
-    Reform_Imp_H(h::Function,x,y,pSet::Vector{Vector{Float64}},ny::Int64)
-Reformulates the `h` function `h(x,y,p) = 0` into  pSet into `h(x,y*,p*) =
-[h(x,y[1:ny],pSet[1]), h(x,y[(ny+1):2*ny],pSet[2]),...,h(x,y[(ny+1)*(np-1):ny*np],
-pSet[end])]`for input into implicit global optimization routine.
-"""
-function Reform_Imp_H(h::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int) where T<:Real
-  h_reform = zeros(T,ny*length(pUBD))
-  for i=1:length(pUBD)
-    h_reform[(1+ny*(i-1)):(ny*i)] = h(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])
-  end
-  return h_reform
-end
-
-"""
-    Reform_Imp_G(h::Function,x,y,pUBD::Vector{Vector{Float64}},ny::Int64)
-Reformulates the semi-infinite constraint function `g(x,y,p)` into  pSet into
-`g(x,y*,p*) = [g(x,y[1:ny],pSet[1]), g(x,y[(ny+1):2*ny],pSet[2]),...,
-g(x,y[(ny+1)*(np-1):ny*np],pSet[end])]` for input into implicit global
-optimization routine.
-"""
-function Reform_Imp_G(g::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int,eps_g::Float64) where T<:Real
-  g_reform = zeros(T,ny*length(pUBD))
-  for i=1:length(pUBD)
-    g_reform[(1+ny*(i-1)):(ny*i)] = g(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])+eps_g
-  end
-  return g_reform
-end
-
-"""
-    Reform_Imp_G(h::Function,x,y,pUBD::Vector{Vector{Float64}},ny::Int64) - TO DO
-Reformulates the semi-infinite constraint function `g(x,y,p)` into  pSet into
-`g(x,y*,p*) = [g(x,y[1:ny],pSet[1]), g(x,y[(ny+1):2*ny],pSet[2]),...,
-g(x,y[(ny+1)*(np-1):ny*np],pSet[end])]` for input into implicit global
-optimization routine.
-"""
-function Reform_Imp_HG(h::Function,g::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int,gl::Int,eps_g::Float64) where T<:Real
-  np = length(pUBD)
-  hg_reform = zeros(T,(ny+gl)*np)
-  for i=1:np
-      hg_reform[(1+ny*(i-1)):(ny*i)] = h(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])+eps_g
-  end
-  for i=1:np
-      hg_reform[(ny*np+1+gl*(i-1)):(ny*np+gl*i)] = g(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])+eps_g
-  end
-  return hg_reform
-end
-
-"""
-    Reform_Imp_HJ(hj::Function,x,y,pUBD::Vector{Vector{Float64}},ny::Int64)
-Reformulates the Jacobian w.r.t y, `hj!`, of `h(x,y,p)` into  pSet into `hj!(H,x,y*)`
-for input into implicit global optimization routine where `y* = [y_1; y_2; ... y_np]`.
-"""
-function Reform_Imp_HJ(hj::Function,x::Vector{T},y,pUBD::Vector{Vector{Float64}},ny::Int) where T<:Real
-  hj_reform = zeros(T,ny*length(pUBD),ny*length(pUBD))
-  for i=1:length(pUBD)
-    hj_reform[(1+ny*(i-1)):(ny*i),(1+ny*(i-1)):(ny*i)] = hj(x,y[(1+ny*(i-1)):(ny*i)],pUBD[i])
-  end
-  return hj_reform
-end
 """
     Reform_Imp_Y(X::Vector{Interval{Float64}},Y::Vector{Interval{Float64}},
                  pUBD::Vector{Vector{Float64}})
@@ -111,8 +50,8 @@ of lower bounds, upper bounds, the state space dimension (for the opt problem), 
 the entire problem dimension.
 """
 function Reform_Imp_Y(xL::Vector{Float64},xU::Vector{Float64},yL::Vector{Float64},yU::Vector{Float64},P)
-  nx::Int = length(X)
-  ny::Int = length(Y)
+  nx::Int = length(xL)
+  ny::Int = length(yL)
   np::Int = length(P)
   Y_reform_lo::Vector{Float64} = zeros(ny*np)
   Y_reform_hi::Vector{Float64} = zeros(ny*np)
