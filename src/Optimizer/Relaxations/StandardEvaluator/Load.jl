@@ -18,7 +18,7 @@ end
 function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.AbstractNLPEvaluator}
 
     # Checks to see if nlp data block evaluator is present
-    if (typeof(src) != MajorEAGOUpdate.EmptyNLPEvaluator)
+    if (typeof(src) != EAGO.EmptyNLPEvaluator)
 
         # Creates the empty evaluator
         d = Evaluator{S}(src.m)
@@ -37,14 +37,10 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
         d.disable_2ndorder = !in(:cv_hess,fieldnames(eltype(d)))
 
         # Add objective functions, constraints, subexpressions
-        c1 = d.has_nlobj
-        c2 = d.objective
-        c3 = src.objective
-
         d.has_nlobj = isa(nldata.nlobj, JuMP.NonlinearExprData)
-        c1 = d.has_nlobj
-        copied_func = copy_to_function(S,src.objective)
-        d.objective = copy_to_function(S,src.objective)
+        if (src.has_nlobj)
+            d.objective = copy_to_function(S,src.objective)
+        end
 
         for i in 1:length(src.constraints)
             push!(d.constraints,copy_to_function(S,src.constraints[i]))
@@ -71,11 +67,6 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
         d.fw_repeats = x.EvalWalkRepts
         d.has_reverse = x.EvalReverse
         d.jac_storage = Array{Float64}(undef,max(num_variables_, d.m.nlp_data.largest_user_input_dimension)) # DO I NEED THIS
-
-        # copy the hessian sparsity pattern
-        if !d.disable_2ndorder
-            d.hessian_sparsity = src.hessian_sparsity
-        end
 
         return d
     end

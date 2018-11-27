@@ -144,8 +144,6 @@ function SetToDefault!(m::Optimizer)
     (m.BisectionFunction == DummyFunction)  &&   (m.BisectionFunction = ContinuousRelativeBisect)
     (m.CutCondition == DummyFunction)       &&   (m.CutCondition = DefaultCutCondition)
     (m.AddCut == DummyFunction)             &&   (m.AddCut = DefaultAddCut)
-    println("set to default initial relaxed: $(m.InitialRelaxedOptimizer)")
-    println("set to default working relaxed: $(m.WorkingRelaxedOptimizer)")
     (typeof(m.InitialRelaxedOptimizer) == DummyOptimizer) && (m.InitialRelaxedOptimizer = Clp.Optimizer())
     (typeof(m.WorkingRelaxedOptimizer) == DummyOptimizer) && (m.WorkingRelaxedOptimizer = Clp.Optimizer())
     (typeof(m.InitialUpperOptimizer) == DummyOptimizer) && (m.InitialUpperOptimizer = Ipopt.Optimizer())
@@ -200,7 +198,6 @@ end
 function Update_VariableBounds_Lower1!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI.AbstractOptimizer}
     # Updates variables bounds
     typevar = m.LowerVariables
-    println("typevar: $typevar")
     for (i,var) in enumerate(m.VariableInfo)
         #println("i: $i")
         #println("var: $var")

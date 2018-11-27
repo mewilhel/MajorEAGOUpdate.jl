@@ -3,7 +3,9 @@ function MOI.empty!(m::Optimizer)
 end
 
 function MOI.is_empty(m::Optimizer)
+
     vb = Bool[false for i=1:15]
+
     vb[1] = isempty(m.VariableInfo)
     vb[2] = m.StartedSolve
     vb[3] = m.OptimizationSense == MOI.FeasibilitySense
@@ -20,7 +22,9 @@ function MOI.is_empty(m::Optimizer)
     vb[13] = m.NodeStorage == DummyFunction
     vb[14] = m.NodeSelection == DummyFunction
     vb[15] = m.BisectionFunction == DummyFunction
+
     bool_out = (sum(vb) > 0)
+
     return bool_out
 end
 

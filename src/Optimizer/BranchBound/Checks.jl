@@ -25,29 +25,27 @@ function DefaultTerminationCheck(x::Optimizer)
     if t1 & t2 & t3 & t4 & t5
       return true
     else
-      if (x.Verbosity == 2 || x.Verbosity == 3)
-        if ~t1
-          if (x.FirstSolutionNode > 0)
-            x.TerminationStatusCode = MOI.Success
-            x.ResultStatusCode = MOI.FeasiblePoint
-            #println("Empty Stack: Exhaustive Search Finished")
-          else
-            x.TerminationStatusCode = MOI.InfeasibleNoResult
-            x.ResultStatusCode = MOI.InfeasibilityCertificate
-            #println("Empty Stack: Infeasible")
-          end
-        elseif ~t3
-          #println("Node Limit Exceeded")
-        elseif ~t2
-          #println("Maximum Iteration Exceeded")
-        else
+      if ~t1
+        if (x.FirstSolutionNode > 0)
           x.TerminationStatusCode = MOI.Success
           x.ResultStatusCode = MOI.FeasiblePoint
-          #println("Convergence Tolerance Reached")
+          (x.Verbosity >= 3) && println("Empty Stack: Exhaustive Search Finished")
+        else
+          x.TerminationStatusCode = MOI.InfeasibleNoResult
+          x.ResultStatusCode = MOI.InfeasibilityCertificate
+          (x.Verbosity >= 3) && println("Empty Stack: Infeasible")
         end
+      elseif ~t3
+        (x.Verbosity >= 3) && println("Node Limit Exceeded")
+      elseif ~t2
+        (x.Verbosity >= 3) && println("Maximum Iteration Exceeded")
+      else
+        x.TerminationStatusCode = MOI.Success
+        x.ResultStatusCode = MOI.FeasiblePoint
+        (x.Verbosity >= 3) && println("Convergence Tolerance Reached")
       end
-      return false
     end
+    return false
 end
 
 ```
@@ -60,9 +58,5 @@ function DefaultConvergenceCheck(x::Optimizer)
   U = x.CurrentUpperInfo.Value
   t1 = (U - L) <= x.AbsoluteTolerance
   t2 = (abs(U - L)/(min(abs(L),abs(U))) <= x.RelativeTolerance)
-  #println("L: $L")
-  #println("U: $U")
-  #println("t1: $t1")
-  #println("t2: $t2")
   return t1 || t2
 end

@@ -1,9 +1,8 @@
-with_optimizer(Ipopt.Optimizer, print_level=0)
+#with_optimizer(Ipopt.Optimizer, print_level=0)
+#with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer())
 
-with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer())
-
+#m = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = GLPK.Optimizer()))
 m = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer()))
-#=
 
 # Need nonnegativity for (rotated) second-order cone
 @variable(m, 0 <= x <= 1)
@@ -59,5 +58,4 @@ println("y = ", JuMP.value(z))
     println("y = ", JuMP.value(y))
 
 end
-=#
 =#

@@ -183,7 +183,26 @@ EAGO.RelaxQuadratic!(target, model, n)
     @test target.LinearLEQConstraints[6][3] == 2
 end
 
-#=
+m = Model(with_optimizer(EAGO.Optimizer))
+@variable(m, x)
+@variable(m, y)
+
+@NLobjective(m, Min, exp(1 - x) ^ 2 + 100 * (y - x ^ 2) ^ 2)
+#@NLobjective(m, Min, log(y - x ^ 2))
+#@NLobjective(m, Min, log(x))
+
+@constraint(m, x^2 + y <= 10)
+@constraint(m, x + y == 10)
+@constraint(m, y >= 0)
+
+@NLconstraint(m, log(y - x ^ 2) <= 0)
+
+source_evaluator = JuMP.NLPEvaluator(m)
+MOI.initialize(source_evaluator , Symbol[:Grad])
+
+opt = m.moi_backend.optimizer
+built_evaluator = EAGO.Build_NLP_Evaluator(MC{2}, source_evaluator, opt)
+
 @testset "NLP Evaluator" begin
 
     m = Model(with_optimizer(EAGO.Optimizer))
@@ -203,12 +222,10 @@ end
     source_evaluator = JuMP.NLPEvaluator(m)
     MOI.initialize(source_evaluator , Symbol[:Grad])
 
-    opt = m.moi_backend.model.optimizer
-
-    #=
-    # Check build
+    opt = m.moi_backend.optimizer
     built_evaluator = EAGO.Build_NLP_Evaluator(MC{2}, source_evaluator, opt)
 
+#=
     # Add current node and define point
     built_evaluator.current_node = EAGO.NodeBB(Float64[1.0,5.0], Float64[2.0,6.0], -Inf, Inf, 2, 1, true)
     xpoint = Float64[1.5,5.5]
@@ -260,6 +277,5 @@ end
     @test temp5[1][2] == 1
     @test temp5[2][1] == 1
     @test temp5[2][2] == 2
-    =#
-end
 =#
+end

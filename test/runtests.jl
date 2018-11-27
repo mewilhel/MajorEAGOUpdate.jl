@@ -5,7 +5,7 @@ using IntervalArithmetic
 using Test
 using JuMP
 using Ipopt
-using Clp,CPLEX
+using Clp,CPLEX,GLPK
 
 const EAGO = MajorEAGOUpdate
 const MOI = MathOptInterface

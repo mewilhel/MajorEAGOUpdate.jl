@@ -211,14 +211,59 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         end
 
         default_opt_dict[:Relaxation] = DefaultRelaxationScheme()
+        default_opt_dict[:GlobalLowerBound] = -Inf
+        default_opt_dict[:GlobalUpperBound] = Inf
+
+        # Output specification fields
+        #m.Verbosity = 0
+        default_opt_dict[:Verbosity] = 3
+        default_opt_dict[:WarmStart] = false
+        default_opt_dict[:OutputInterations] = 1
+        default_opt_dict[:HeaderInterations] = 100
+        default_opt_dict[:DigitsDisplayed] = 3
+        default_opt_dict[:ReturnHistory] = false
+        default_opt_dict[:FlagSubSolverErrors] = true
+
+        # Duality-based bound tightening parameters
+        default_opt_dict[:DBBTDepth] = Int(1E6)
+        default_opt_dict[:DBBTTolerance] = 1E-8
+
+        # Optimality-based bound tightening parameters
+        default_opt_dict[:OBBTDepth] = 3
+        default_opt_dict[:OBBTAggrOn] = false
+        default_opt_dict[:OBBTAggrMaxIteration] = 2
+        default_opt_dict[:OBBTAggrMinDimLimit] = 2
+        default_opt_dict[:OBBTTolerance] = 1E-5
+
+        # Feasibility-Based Bound Tightening Options
+        default_opt_dict[:CPWalkDepth] = 10
+        default_opt_dict[:CPWalkRepts] = 10
+        default_opt_dict[:EvalWalkRepts] = 1
+        default_opt_dict[:EvalReverse] = false
+
+        # Options for Repetition (If DBBT Performed Well)
+        default_opt_dict[:MaximumRepetitions] = 1
+        default_opt_dict[:RepetitionVolumeTolerance] = 0.0
+
+        # Poor Man's LP reptiations
+        default_opt_dict[:PoorManLPRepts] = 1
+
+        # Termination Limits
+        default_opt_dict[:IterationLimit] = Int(1E6)
+        default_opt_dict[:NodeLimit] = Int(1E6)
+        default_opt_dict[:AbsoluteTolerance] = 1E-4
+        default_opt_dict[:RelativeTolerance] = 1E-4
+        default_opt_dict[:ExhaustiveSearch] = false
+        default_opt_dict[:FirstRelaxed] = false
 
         for i in keys(default_opt_dict)
             if (haskey(options,i))
                 setfield!(m, i, options[i])
+            else
+                setfield!(m, i, default_opt_dict[i])
             end
         end
 
-        println("options: $options")
         m.Debug1 = []
         m.Debug2 = []
         m.InputModel = 0
@@ -273,16 +318,13 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.Objective = nothing
         m.ObjectiveConvexity = false
 
-        m.GlobalLowerBound = -Inf
-        m.GlobalUpperBound = Inf
-        m.MaximumNodeID = 0
-
         # Historical Information
         m.History = NodeHistory()
         m.CurrentIterationCount = 0
         m.CurrentNodeCount = 0
+        m.MaximumNodeID = 0
 
-        # Storage used to compute output
+        # Output for Solution Storage
         m.SolutionValue = -Inf
         m.FirstFound = false
         m.FeasibleSolutionFnd = false
@@ -294,54 +336,12 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.StartedSolve = false
         m.FailedSolver = NoFailure
 
-        # Output specification fields
-        #m.Verbosity = 0
-        m.Verbosity = 3
-        m.WarmStart = false
-        m.OutputInterations = 10
-        m.HeaderInterations = 100
-        m.DigitsDisplayed = 3
-        m.ReturnHistory = false
-        m.FlagSubSolverErrors = true
-
-        # Optimality-Based Bound Tightening (OBBT) Options
-        m.OBBTDepth = 3
+        # Optimality-Based Bound Tightening (OBBT) Storage
         m.OBBTVars = MOI.VariableIndex[]
-        m.OBBTAggrOn = false
-        m.OBBTAggrMaxIteration = 2
-        m.OBBTAggrMinDimLimit = 2
-        m.OBBTTolerance = 1E-5
         m.OBBTWorkingLowerIndx = MOI.VariableIndex[]
         m.OBBTWorkingUpperIndx = MOI.VariableIndex[]
         m.OBBTInitialLowerIndx = MOI.VariableIndex[]
         m.OBBTInitialUpperIndx = MOI.VariableIndex[]
-
-        # Duality-based bound tightening parameters
-        m.DBBTDepth = 1E6
-        m.DBBTTolerance = 1E-8
-
-        # Feasibility-Based Bound Tightening Options
-        m.CPWalkDepth = 10
-        m.CPWalkRepts = 10
-        m.EvalWalkRepts = 1
-        m.EvalReverse = false
-
-        # Options for Repetition (If DBBT Performed Well)
-        m.MaximumRepetitions = 1
-        m.RepetitionVolumeTolerance = 0.0
-
-        # Poor Man's LP reptiations
-        m.PoorManLPRepts = 1
-
-        # Termination Limits
-        m.IterationLimit = 1E6
-        m.NodeLimit = 1E6
-        m.AbsoluteTolerance = 1E-4
-        m.RelativeTolerance = 1E-4
-        m.ExhaustiveSearch = false
-        m.FirstRelaxed = false
-
-        println("m: $m")
 
         return m
     end

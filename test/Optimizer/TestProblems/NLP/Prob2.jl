@@ -1,25 +1,20 @@
+jumpmodel6 = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer()))
+@variable(jumpmodel6, -5 <= x1 <= 5)
+@variable(jumpmodel6, -5 <= y1 <= 5)
+@NLobjective(jumpmodel6, Min, 2*x1^2-1.05*x1^4+(x1^6)/6+x1*y1+y1^2)
+status6 = JuMP.optimize!(jumpmodel6)
+
+#=
 @testset "NLP Problem #2" begin
-    # Test NLP #6
-    println("----- Test Example 6 -----")
-    m = Model(with_optimizer(EAGO.Optimizer))
+    jumpmodel6 = Model(with_optimizer(EAGO.Optimizer))
+    @variable(jumpmodel6, -5 <= x1 <= 5)
+    @variable(jumpmodel6, -5 <= y1 <= 5)
+    @NLobjective(jumpmodel6, Min, 2*x1^2-1.05*x1^4+(x1^6)/6+x1*y1+y1^2)
+    status6 = JuMP.optimize!(jumpmodel6)
 
-    @variable(m, -3 <= x <= -1)
-    @variable(m, -2 <= y <= 2)
-    @variable(m, 1 <= z <= 3)
-
-    @NLobjective(m, Min, 2abs(x) - 3exp(z))
-
-    @NLconstraint(m, exp(z) >= -10)
-    @NLconstraint(m, x^3 <= 2)
-    @NLconstraint(m, x*y >= 4)
-    @NLconstraint(m, 2x^3 - 3exp(z) + x*y >= 0)
-
-    JuMP.optimize!(m)
-
-    backend6sol = m.moi_backend.model.optimizer.variable_primal_solution
-    backend6term = m.moi_backend.model.optimizer.termination_status
-    backend6pstatus = m.moi_backend.model.optimizer.primal_status
-    backend6dstatus = m.moi_backend.model.optimizer.dual_status
-
-    debug6 = m.moi_backend.model.optimizer.Debug1
+    @test isapprox(getvalue(x1),0.0,atol=1E-3)
+    @test isapprox(getvalue(y1),0.0,atol=1E-3)
+    @test isapprox(getobjectivevalue(jumpmodel6),0.0,atol=1E-6)
+    @test status6 == :Optimal
 end
+=#

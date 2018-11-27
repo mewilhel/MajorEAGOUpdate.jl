@@ -21,7 +21,6 @@ function SolveNLP!(x::Optimizer)
   # terminates when max nodes or iteration is reach, or when node stack is empty
   iterationcountinternal = 0
   while (x.TerminationCheck(x))
-    println("x.CurrentIterationCount: $(x.CurrentIterationCount)")
     iterationcountinternal += 1
     #println("iterationcountinternal: $iterationcountinternal")
     # Fathom nodes with lower bound greater than global upper bound

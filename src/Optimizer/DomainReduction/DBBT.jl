@@ -17,5 +17,4 @@ function Variable_DBBT!(x::NodeBB,
       end
     end
   end
-  println("ran Variable_DBBT")
 end

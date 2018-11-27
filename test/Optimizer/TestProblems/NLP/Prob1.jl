@@ -1,22 +1,22 @@
+jumpmodel4 = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer()))
+@variable(jumpmodel4, -200 <= x <= -100)
+@variable(jumpmodel4, 200 <= y <= 400)
+@constraint(jumpmodel4, -500 <= x+2y <= 400)
+@NLobjective(jumpmodel4, Min, x*y)
+status4 = JuMP.optimize!(jumpmodel4)
+
+#=
 @testset "NLP Problem #1" begin
-    # Test NLP #5
-    println("----- Test Example 5 -----")
-    m = Model(with_optimizer(EAGO.Optimizer))
+    jumpmodel4 = Model(with_optimizer(EAGO.Optimizer))
+    @variable(jumpmodel4, -200 <= x <= -100)
+    @variable(jumpmodel4, 200 <= y <= 400)
+    @constraint(jumpmodel4, -500 <= x+2y <= 400)
+    @NLobjective(jumpmodel4, Min, x*y)
+    status4 = JuMP.optimize!(jumpmodel4)
 
-    @variable(m, 2 <= x <= 4)
-    @variable(m, 1 <= y <= 2)
-    @NLobjective(m, Min, 2sqrt(x) + 3sqrt(y))
-
-    @NLconstraint(m, exp(z) >= -10)
-    @NLconstraint(m, sqrt(x) <= 2)
-    @NLconstraint(m, x*y >= 4)
-    @NLconstraint(m, 2sqrt(x) - 3exp(z) + x*y >= 0)
-
-    JuMP.optimize!(m)
-
-    backend5sol = m.moi_backend.model.optimizer.variable_primal_solution
-    backend5term = m.moi_backend.model.optimizer.termination_status
-    backend5pstatus = m.moi_backend.model.optimizer.primal_status
-    backend5dstatus = m.moi_backend.model.optimizer.dual_status
-    #debug5 = m.moi_backend.model.optimizer.Debug1
+    @test status4 == :Optimal
+    @test isapprox(getvalue(x),-200.0,atol=1E-6)
+    @test isapprox(getvalue(y),300.0,atol=1E-6)
+    @test isapprox(getobjectivevalue(jumpmodel4),-60000.00119999499,atol=2.0)
 end
+=#

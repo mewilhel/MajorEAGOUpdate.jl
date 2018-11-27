@@ -16,6 +16,7 @@ using Calculus
 
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
+const EAGO = MajorEAGOUpdate
 
 include("McCormick/McCormick.jl")
 using .McCormick

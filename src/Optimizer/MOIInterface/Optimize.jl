@@ -2,11 +2,6 @@ function TrivFunction(x) end
 
 function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = (1,))
 
-    println("pre optimize initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
-    println("pre optimize working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
-
-    println("m.VariableInfo: $(m.VariableInfo)")
-
     ########### Reformulate DAG using auxilliary variables ###########
     #LoadDAG!(m); LabelDAG!(m)
     #NewVariableSize,NewVariableIndex = ProcessDAG!(m)
@@ -39,22 +34,13 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     # Get various other sizes
     num_nlp_constraints = length(m.NLPData.constraint_bounds)
     m.ContinuousSolution = zeros(Float64,NewVariableSize)
-    println("NewVariableSize: $NewVariableSize")
-
-    println("pre default initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
-    println("pre default working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
 
     # Sets any unset functions to default values
     SetToDefault!(m)
 
-    println("post default initial relaxed: $(typeof(m.InitialRelaxedOptimizer))")
-    println("post default working relaxed: $(typeof(m.WorkingRelaxedOptimizer))")
-
     # Copies variables to upper subproblems
     MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
-    println("m.VariableNumber: $(m.VariableNumber))")
     m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
-    println("m.UpperVariables: $(m.UpperVariables)")
 
     # Copies variables and bounds to lower subproblems
     #PushLowerVariables!(m)

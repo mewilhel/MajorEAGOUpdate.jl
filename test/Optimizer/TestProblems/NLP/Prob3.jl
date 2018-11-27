@@ -1,13 +1,19 @@
-@testset "NLP Problem #3" begin
-    jumpmodel4 = Model(with_optimizer(EAGO.Optimizer))
-    @variable(jumpmodel4, -200 <= x <= -100)
-    @variable(jumpmodel4, 200 <= y <= 400)
-    @constraint(jumpmodel4, -500 <= x+2y <= 400)
-    @NLobjective(jumpmodel4, Min, x*y)
-    status4 = solve(jumpmodel4)
+jumpmodel9 = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer()))
+@variable(jumpmodel9, -5 <= x9 <= 5)
+@variable(jumpmodel9, -5 <= y9 <= 5)
+@NLobjective(jumpmodel9, Min, 2*x9^2-1.05*x9^4+(x9^6)/6+x9*y9+y9^2)
+status9 = JuMP.optimize!(jumpmodel9)
 
-    @test status4 == :Optimal
-    @test isapprox(getvalue(x),-200.0,atol=1E-6)
-    @test isapprox(getvalue(y),300.0,atol=1E-6)
-    @test isapprox(getobjectivevalue(jumpmodel4),-60000.00119999499,atol=2.0)
+#=
+@testset "NLP Problem #3" begin
+    jumpmodel9 = Model(with_optimizer(EAGO.Optimizer))
+    @variable(jumpmodel9, -5 <= x9 <= 5)
+    @variable(jumpmodel9, -5 <= y9 <= 5)
+    @NLobjective(jumpmodel9, Min, 2*x9^2-1.05*x9^4+(x9^6)/6+x9*y9+y9^2)
+    status9 = JuMP.optimize!(jumpmodel9)
+    @test isapprox(getvalue(x9),0.0,atol=1E0)
+    @test isapprox(getvalue(y9),0.0,atol=1E0)
+    @test isapprox(getobjectivevalue(jumpmodel9),0.0,atol=1E-1)
+    @test status9 == :Optimal
 end
+=#

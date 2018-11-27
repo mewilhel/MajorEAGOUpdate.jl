@@ -1,12 +1,33 @@
-@testset "NLP Problem #4" begin
-    jumpmodel6 = Model(with_optimizer(EAGO.Optimizer))
-    @variable(jumpmodel6, -5 <= x1 <= 5)
-    @variable(jumpmodel6, -5 <= y1 <= 5)
-    @NLobjective(jumpmodel6, Min, 2*x1^2-1.05*x1^4+(x1^6)/6+x1*y1+y1^2)
-    status6 = solve(jumpmodel6)
+@testset "NLP Problem #4: ex14_1_1 (global library)" begin
 
-    @test isapprox(getvalue(x1),0.0,atol=1E-3)
-    @test isapprox(getvalue(y1),0.0,atol=1E-3)
-    @test isapprox(getobjectivevalue(jumpmodel6),0.0,atol=1E-6)
-    @test status6 == :Optimal
+    m = Model(with_optimizer(EAGO.Optimizer))
+
+    # ----- Variables ----- #
+    @variable(m, objvar)
+    x_Idx = Any[1, 2, 3]
+    @variable(m, x[x_Idx])
+    setlowerbound(x[1], -5.0)
+    setupperbound(x[1], 5.0)
+    setlowerbound(x[2], -5.0)
+    setupperbound(x[2], 5.0)
+
+
+    # ----- Constraints ----- #
+    @constraint(m, e1, -x[3]+objvar == 0.0)
+    @NLconstraint(m, e2, 2* (x[2])^2+4*x[1]*x[2]-42*x[1]+4* (x[1])^3-x[3] <= 14.0)
+    @NLconstraint(m, e3, (-2* (x[2])^2)-4*x[1]*x[2]+42*x[1]-4* (x[1])^3-x[3] <= -14.0)
+    @NLconstraint(m, e4, 2* (x[1])^2+4*x[1]*x[2]-26*x[2]+4* (x[2])^3-x[3] <= 22.0)
+    @NLconstraint(m, e5, (-2* (x[1])^2)-4*x[1]*x[2]+26*x[2]-4* (x[2])^3-x[3] <= -22.0)
+
+
+    # ----- Objective ----- #
+    @objective(m, Min, objvar)
+
+    fval = JuMP.objective_value(m)
+    status_term = JuMP.termination_status(m)
+    status_prim = JuMP.primal_status(m)
+
+    @test isapprox(fval,0.000,atol=1E-3)
+    @test status_term == MOI.Success
+    @test status_prim == MOI.FeasiblePoint
 end
