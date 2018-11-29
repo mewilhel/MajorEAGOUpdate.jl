@@ -1,3 +1,4 @@
+#=
 println("--- Test Branch and Bound Subroutines ---")
 include("branch_bound.jl")
 
@@ -9,9 +10,10 @@ include("moi_interface.jl")
 
 println("--- Test Other Utilities Routines ---")
 include("other_utilities.jl")
+=#
 
 println("--- Test Relaxation Routines ---")
-include("relaxation_tools.jl")
+include("Relaxations/Relaxations.jl")
 
 #println("--- Test Main Solution Routines ---")
 #include("optimize.jl")

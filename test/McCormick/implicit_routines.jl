@@ -29,42 +29,28 @@
     sone = @SVector ones(np)
     p_mc = [MC{np}(p[i],p[i],Interval(P[i].lo,P[i].hi),sone,sone,false) for i=1:np]
 
-    println("ran to 1")
     param = GenExpansionParams(h1,hj1,X,P,pmid,opts1)
-    println("param: $param")
 
-    println("ran to 2")
     hbnds = MC_impRelax(h1,hj1,p_mc,pmid,X,P,opts1,param)
-    println("hbnds: $hbnds")
 
-    println("ran to 3")
     fbnds = impRelax_f(f,h1,hj1,X,P,p,pmid,opts1,param)
-    println("fbnds: $fbnds")
 
-    println("ran to 4")
     fgbnds = impRelax_fg(f,g,h1,hj1,X,P,p,pmid,opts1,param)
-    println("fgbnds: $fgbnds")
 
-    println("ran to 5")
     param = GenExpansionParams(h1,hj1,X,P,pmid,opts1)
-    println("param: $param")
 
-    println("ran to 6")
     @test isapprox(param[2][1].cc,-0.4,atol=1E-4)
     @test isapprox(param[2][1].cv,-0.78,atol=1E-4)
     hbnds = MC_impRelax(h1,hj1,p_mc,pmid,X,P,opts1,param)
-    println("hbnds: $hbnds")
 
     @test isapprox(hbnds[1].cc,-0.5209127114919797,atol=1E-4)
     @test isapprox(hbnds[1].cv,-0.6307841683146562,atol=1E-4)
     fbnds = impRelax_f(f,h1,hj1,X,P,p,pmid,opts1,param)
-    println("fbnds: $fbnds")
 
     @test isapprox(fbnds.cc,3.774523731048122,atol=1E-4)
     @test isapprox(fbnds.cv,2.5572882333553046,atol=1E-4)
 
     fgbnds = impRelax_fg(f,g,h1,hj1,X,P,p,pmid,opts1,param)
-    println("fgbnds: $fbnds")
     @test isapprox(fgbnds[1].cc,3.774523731048122,atol=1E-4)
     @test isapprox(fgbnds[1].cv,2.5572882333553046,atol=1E-4)
     @test isapprox(fgbnds[2][1].cc,3.774523731048122,atol=1E-4)

@@ -55,11 +55,17 @@ function copy(x::NodeBB)
     return NodeBB(x.LowerVar, x.UpperVar, x.LowerBound, x.UpperBound, x.Depth, x.LastBranch, x.DirBranch)
 end
 
-function SameBox(x::NodeBB,y::NodeBB,atol::Float64)
+function SameBox(x::NodeBB,y::NodeBB, atol::Float64)
     bool = true
+    (isempty(x.LowerVar) ⊻ isempty(y.LowerVar)) && (return false)
+    (isempty(x.UpperVar) ⊻ isempty(y.UpperVar)) && (return false)
     for i in 1:length(x.LowerVar)
-        x.LowerVar[i] != y.LowerVar[i]
-
+        if (x.LowerVar[i] != y.LowerVar[i])
+            bool = false; break
+        end
+        if (x.UpperVar[i] != y.UpperVar[i])
+            bool = false; break
+        end
     end
     return bool
 end

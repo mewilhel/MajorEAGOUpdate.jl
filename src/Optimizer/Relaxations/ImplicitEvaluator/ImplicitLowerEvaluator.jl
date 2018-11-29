@@ -15,6 +15,7 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
     jacobian_sparsity::Vector{Tuple{Int64,Int64}}
     obj_eval::Bool
     cnstr_eval::Bool
+    init_relax_run::Bool
 
     P::Vector{IntervalType}
     X::Vector{IntervalType}
@@ -42,6 +43,7 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
         #d.state_fun = nothing
         d.obj_eval = false
         d.cnstr_eval = false
+        d.init_relax_run = false
         d.jacobian_sparsity = Tuple{Int64,Int64}[]
 
         d.np = 0
@@ -78,43 +80,47 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
     end
 end
 
-function build_lower_evaluator!(d::ImplicitLowerEvaluator; obj = nothing, constr = nothing,
-                                impfun = nothing, np::Int = 0, nx::Int = 0, ng::Int = 0,
-                                user_sparse::Vector{Tuple{Int64,Int64}} = nothing)
+function build_lower_evaluator!(d::ImplicitLowerEvaluator, impfun::Function, np::Int, nx::Int; obj = DummyFunction, constr = DummyFunction, ng::Int = 0,
+                                user_sparse = nothing, state_jac = DummyFunction)
 
     # setup objective and constraint functions
     d.objective_fun = obj
     d.constraints_fun = constr
     d.state_fun = impfun
     yimp = y -> d.state_fun(y[(np+1):(nx+np)],y[1:np])
-    d.state_jac_fun = (x,p) -> ForwardDiff.jacobian(yimp,vcat(x,p))[:,(np+1):(nx+np)]
+
+    if (state_jac == DummyFunction)
+        d.state_jac_fun = (x,p) -> ForwardDiff.jacobian(yimp,vcat(x,p))[:,(np+1):(nx+np)]
+    else
+        d.state_jac_fun = state_jac
+    end
 
     # has a nonlinear objective?
     (obj == nothing) || (d.has_nlobj = true)
 
     # get dimension sizes
     d.np = np; d.nx = nx;
-    d.ng = (constr == nothing) ? 0 : length(constr(zeros(nx),zeros(np)))
+    d.ng = (constr == nothing) ?  0 : ng
 
     # set implicit routine information
     d.imp_opts.nx = nx
     d.imp_opts.np = np
 
     # preallocates the storage variables
-    println("initialized state")
+    #println("initialized state")
     temp = zero(MC{np})
-    println("temp: $temp")
+    #println("temp: $temp")
     d.state_relax = fill(temp,(nx,))
-    println("initialized constraint")
+    #println("initialized constraint")
     d.cnstr_relax = MC{np}[zero(MC{np}) for i in 1:ng]
-    println("initialized ref state")
+    #println("initialized ref state")
     d.state_ref_relaxation = Vector{MC{np}}[MC{np}[zero(MC{np}) for i in 1:nx] for j in 1:d.imp_opts.kmax]
 
     d.P = fill(IntervalType(0.0),(np,))
     d.X = fill(IntervalType(0.0),(nx,))
 
     # allocates the reference points
-    d.last_p = zeros(Float64,np)
+    d.last_p = zeros(Float64,np); fill!(d.last_p,NaN)
     d.ref_p = zeros(Float64,np)
 
     if (user_sparse == nothing)
@@ -125,6 +131,8 @@ function build_lower_evaluator!(d::ImplicitLowerEvaluator; obj = nothing, constr
             end
         end
         d.jacobian_sparsity = sparse_pattern
+    else
+        d.jacobian_sparsity = user_sparse
     end
 end
 
@@ -132,31 +140,60 @@ function set_current_node!(x::ImplicitLowerEvaluator,n::NodeBB)
     x.current_node = n
 end
 
+function set_last_node!(x::ImplicitLowerEvaluator,n::NodeBB)
+    x.current_node = n
+end
+
 # LOOKS GREAT!
 function relax_implicit!(d::ImplicitLowerEvaluator,p)
     # Generate new parameters for implicit relaxation if necessary
-    if d.current_node != d.last_node
+    if ~SameBox(d.current_node,d.last_node,0.0)
+        println("is new node")
+        d.init_relax_run = false
         d.obj_eval = false
         d.cnstr_eval = false
+        d.last_node = d.current_node
+        println("reset eval flags")
         for i in 1:d.np
+            println("set P and ref P: $i")
             d.ref_p[i] = (d.current_node.LowerVar[i]+d.current_node.UpperVar[i])/2.0
             d.P[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
         end
         for j in (d.np+1):(d.np+d.nx)
+            println("set X: $j")
             shiftj = j - d.np
             d.X[shiftj] = IntervalType(d.current_node.LowerVar[j],d.current_node.UpperVar[j])
         end
+        println("assigned state ref relax")
         d.state_ref_relaxation = GenExpansionParams(d.state_fun, d.state_jac_fun, d.X, d.P, d.ref_p, d.imp_opts)
+        println("typeof(d.state_ref_relaxation): $(typeof(d.state_ref_relaxation))")
+        println("d.state_ref_relaxation: $(d.state_ref_relaxation)")
+        println("typeof(d.state_relax): $(typeof(d.state_relax))")
+        println("d.state_relax: $(d.state_relax)")
     end
     # Generate new value of implicit relaxation
-    if d.ref_p != p
+    println("d.ref_p: $(d.ref_p)")
+    println("p: $(p)")
+    if (d.ref_p != p) || (~d.init_relax_run)
+        println("not equal arc")
         d.obj_eval = false
         d.cnstr_eval = false
-        pMC = MC{d.np}.(p,d.P)
+        println("pre-zero fill")
+        pMC = fill(zero(MC{d.np}),(d.np,))
+        println("post-zero fill")
+        for i in 1:d.np
+            sg_pi = seedg(Float64,i,d.np)
+            println("seed fill: $(sg_pi)")
+            pMC[i] = MC{d.np}(p[i],p[i],d.P[i],sg_pi,sg_pi,false)
+            println("post-seed fill")
+        end
         d.state_relax = MC_impRelax(d.state_fun, d.state_jac_fun, pMC, d.ref_p, d.X, d.P, d.imp_opts, d.state_ref_relaxation)
     else
-        d.state_relax = d.state_ref_relaxation
+        println("equal arc")
+        d.state_relax = d.state_ref_relaxation[end]
     end
+    println("typeof(d.state_relax): $(typeof(d.state_relax))")
+    println("d.state_relax: $(d.state_relax)")
 end
 
 # LOOKS GREAT!

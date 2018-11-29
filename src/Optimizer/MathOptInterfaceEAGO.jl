@@ -1,3 +1,5 @@
+export NodeBB
+
 # Access and manipulate the optimizer
 include("MOIInterface/NodeBB.jl")
 include("Relaxations/Scheme.jl")
