@@ -148,52 +148,33 @@ end
 function relax_implicit!(d::ImplicitLowerEvaluator,p)
     # Generate new parameters for implicit relaxation if necessary
     if ~SameBox(d.current_node,d.last_node,0.0)
-        println("is new node")
         d.init_relax_run = false
         d.obj_eval = false
         d.cnstr_eval = false
         d.last_node = d.current_node
-        println("reset eval flags")
         for i in 1:d.np
-            println("set P and ref P: $i")
             d.ref_p[i] = (d.current_node.LowerVar[i]+d.current_node.UpperVar[i])/2.0
             d.P[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
         end
         for j in (d.np+1):(d.np+d.nx)
-            println("set X: $j")
             shiftj = j - d.np
             d.X[shiftj] = IntervalType(d.current_node.LowerVar[j],d.current_node.UpperVar[j])
         end
-        println("assigned state ref relax")
         d.state_ref_relaxation = GenExpansionParams(d.state_fun, d.state_jac_fun, d.X, d.P, d.ref_p, d.imp_opts)
-        println("typeof(d.state_ref_relaxation): $(typeof(d.state_ref_relaxation))")
-        println("d.state_ref_relaxation: $(d.state_ref_relaxation)")
-        println("typeof(d.state_relax): $(typeof(d.state_relax))")
-        println("d.state_relax: $(d.state_relax)")
     end
     # Generate new value of implicit relaxation
-    println("d.ref_p: $(d.ref_p)")
-    println("p: $(p)")
     if (d.ref_p != p) || (~d.init_relax_run)
-        println("not equal arc")
         d.obj_eval = false
         d.cnstr_eval = false
-        println("pre-zero fill")
         pMC = fill(zero(MC{d.np}),(d.np,))
-        println("post-zero fill")
         for i in 1:d.np
             sg_pi = seedg(Float64,i,d.np)
-            println("seed fill: $(sg_pi)")
             pMC[i] = MC{d.np}(p[i],p[i],d.P[i],sg_pi,sg_pi,false)
-            println("post-seed fill")
         end
         d.state_relax = MC_impRelax(d.state_fun, d.state_jac_fun, pMC, d.ref_p, d.X, d.P, d.imp_opts, d.state_ref_relaxation)
     else
-        println("equal arc")
         d.state_relax = d.state_ref_relaxation[end]
     end
-    println("typeof(d.state_relax): $(typeof(d.state_relax))")
-    println("d.state_relax: $(d.state_relax)")
 end
 
 # LOOKS GREAT!
@@ -280,17 +261,22 @@ end
 
 # LOOKS GREAT!
 function MOI.eval_constraint_jacobian(d::ImplicitLowerEvaluator,g,p)
-    #d.eval_constraint_jacobian_timer += @elapsed begin
+    d.eval_constraint_jacobian_timer += @elapsed begin
         if d.ng > 0
             relax_implicit!(d,p)
             relax_constraints!(d)
-            g = zero.(g)
-            for (i,j) in d.jacobian_sparsity
-                g[i,j] = d.cnstr_relax[i].cv_grad[j]
+            fill!(g, 0.0)
+            if (d.ng == 1) && (d.np == 1)
+                g[1] = d.cnstr_relax[1].cv_grad[1]
+            else
+                for (i,j) in d.jacobian_sparsity
+                    temp = d.cnstr_relax[i].cv_grad[j]
+                    g[i,j] = d.cnstr_relax[i].cv_grad[j]
+                end
             end
         end
-    #end
-    return
+    end
+    return g
 end
 
 # LOOKS GREAT!
@@ -300,7 +286,7 @@ function MOI.eval_constraint_jacobian_product(d::ImplicitLowerEvaluator, y, p, w
             if d.ng > 0
                 relax_implicit!(d,p)
                 relax_constraints!(d)
-                y = zero.(y)
+                fill!(y, 0.0)
                 for (i,j) in d.jacobian_sparsity
                     y[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
                 end
@@ -319,7 +305,7 @@ function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitLowerEvaluato
             if d.ng > 0
                 relax_implicit!(d,p)
                 relax_constraints!(d)
-                y = zero.(y)
+                fill!(y, 0.0)
                 for (i,j) in d.jacobian_sparsity
                     y[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
                 end
