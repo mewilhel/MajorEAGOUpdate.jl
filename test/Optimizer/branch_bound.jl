@@ -1,4 +1,4 @@
-@testset "Test Branch Rules" begin
+@testset "Test Continuous Branch Rules" begin
     B = EAGO.Optimizer()
     B.VariableNumber = 2
     B.VariableInfo = [EAGO.VariableInfo(false,1.0,false,2.0,false,false,1.5),
@@ -19,6 +19,24 @@
 
     indx,pval = PseudoCostBranch(B,S)
 =#
+end
+
+@testset "Test Implicit Branch Rules" begin
+    B = EAGO.Optimizer()
+    B.VariableNumber = 2
+    B.VariableInfo = [EAGO.VariableInfo(false,1.0,false,2.0,false,false,1.5),
+                  EAGO.VariableInfo(false,2.0,false,6.0,false,false,4.0),
+                  EAGO.VariableInfo(false,2.0,false,6.0,false,false,4.0)]
+    S = EAGO.NodeBB(Float64[1.0,2.0,2.0], Float64[1.5,5.0,5.5], -Inf, Inf, 2, 1, true)
+
+    B.WorkingEvaluatorBlock = JuMP.NLPData()
+    B.WorkingEvaluatorBlock.evaluator = EAGO.ImplicitLowerEvaluator{2}()
+    X1,X2 = EAGO.ImplicitBisection(B,S)
+
+    @test isapprox(X1.LowerVar[2], 2.0; atol = 1E-4)
+    @test isapprox(X1.UpperVar[2], 3.48829; atol = 1E-2)
+    @test isapprox(X2.LowerVar[2], 3.48829; atol = 1E-2)
+    @test isapprox(X2.UpperVar[2], 5.0; atol = 1E-4)
 end
 
 @testset "Test B&B Checks" begin

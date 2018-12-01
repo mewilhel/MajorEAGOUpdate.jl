@@ -1,7 +1,7 @@
-#=
-println("--- Test Branch and Bound Subroutines ---")
-include("branch_bound.jl")
+#println("--- Test Branch and Bound Subroutines ---")
+#include("branch_bound.jl")
 
+#=
 println("--- Test Domain Reduction Routines ---")
 include("domain_reduction.jl")
 
@@ -12,11 +12,11 @@ println("--- Test Other Utilities Routines ---")
 include("other_utilities.jl")
 =#
 
-println("--- Test Relaxation Routines ---")
-include("Relaxations/Relaxations.jl")
+#println("--- Test Relaxation Routines ---")
+#include("Relaxations/Relaxations.jl")
 
 #println("--- Test Main Solution Routines ---")
-#include("optimize.jl")
+include("TestProblems/TestProblems.jl")
 
 
 #=

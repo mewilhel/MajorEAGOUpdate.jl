@@ -46,7 +46,7 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
         d.init_relax_run = false
         d.jacobian_sparsity = Tuple{Int64,Int64}[]
 
-        d.np = 0
+        d.np = N
         d.nx = 0
         d.ng = 0
 

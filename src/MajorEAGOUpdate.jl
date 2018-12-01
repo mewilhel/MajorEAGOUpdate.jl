@@ -27,7 +27,8 @@ include("Optimizer/IpoptSupplement.jl")
 include("Optimizer/MathOptInterfaceEAGO.jl")
 
 export ImplicitLowerEvaluator, build_lower_evaluator!,
-       ImplicitUpperEvaluator, build_upper_evaluator!
+       ImplicitUpperEvaluator, build_upper_evaluator!,
+       SolveImplicit
 
 
 include("Optimizer/Relaxations/StandardForms/Linear.jl")

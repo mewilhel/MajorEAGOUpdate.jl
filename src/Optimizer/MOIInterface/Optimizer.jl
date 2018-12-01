@@ -48,8 +48,8 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     IntegerSolution::Vector{Bool}                   # Stores the integer solution point
     Stack::Dict{Int,NodeBB}                       # Map of Node ID to NodeData
 
-    NLPData::MOI.NLPBlockData
-    WorkingEvaluatorBlock::MOI.NLPBlockData
+    NLPData
+    WorkingEvaluatorBlock
     VariableNumber::Int
     ContinuousNumber::Int
     IntegerNumber::Int
