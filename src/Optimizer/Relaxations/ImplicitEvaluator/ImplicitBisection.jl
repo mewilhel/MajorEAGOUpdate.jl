@@ -1,9 +1,12 @@
 function ImplicitBisection(B::Optimizer,S::NodeBB)
   Pos = 0; Max = -Inf; TempMax = 0.0
-  for i in 1:B.WorkingEvaluatorBlock.evaluator.np
-    TempMax = (S.UpperVar[i] - S.LowerVar[i])/(B.VariableInfo[i].upper_bound - B.VariableInfo[i].lower_bound)
+  nx = B.WorkingEvaluatorBlock.evaluator.nx
+  np = B.WorkingEvaluatorBlock.evaluator.np
+  for i in 1:np
+    shift = nx + i
+    TempMax = (S.UpperVar[shift] - S.LowerVar[shift])/(B.VariableInfo[shift].upper_bound - B.VariableInfo[shift].lower_bound)
     if TempMax > Max
-      Pos = i; Max = TempMax
+      Pos = shift; Max = TempMax
     end
   end
   CutInterval = Interval(S.LowerVar[Pos],S.UpperVar[Pos])

@@ -9,7 +9,7 @@ using LinearAlgebra
 using JuMP
 using JuMP.Derivatives
 
-using Ipopt, Clp
+using Ipopt, Clp, GLPK, CPLEX
 using DiffRules, ForwardDiff, ReverseDiff
 using Reexport, StaticArrays, IntervalArithmetic
 using Calculus
@@ -33,6 +33,7 @@ export ImplicitLowerEvaluator, build_lower_evaluator!,
 
 include("Optimizer/Relaxations/StandardForms/Linear.jl")
 include("Optimizer/Relaxations/StandardForms/Quadratic.jl")
+include("Optimizer/Relaxations/StandardForms/MidPointAffine.jl")
 include("Optimizer/Relaxations/StandardEvaluator/Evaluator.jl")
 
 export SIP_opts, Explicit_SIP_Solve

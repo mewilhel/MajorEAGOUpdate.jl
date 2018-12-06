@@ -22,10 +22,12 @@ opt = EAGO.Optimizer()
 obj(x,p) = x[1]
 h(x,p) = [x[1]^2 + x[1]*p[1] + 4.0]
 hjac(x,p) = [2.0*x[1]+p[1]]
+g(x,p) = ()
 
 pl = [6.0]; pu = [9.0]; xl = [-0.78]; xu = [-0.4]
 
-var, opt = SolveImplicit(obj, h, xl, xu, pl, pu, opt, hj = hjac)
+var, opt = SolveImplicit(obj, h, xl, xu, pl, pu, opt, hjac,g)
+println("ran solve implicit 1")
 #=
 JuMP.value(var[1])
 pval = JuMP.value(var[1])

@@ -64,6 +64,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
     Objective::Union{MOI.SingleVariable,MOI.ScalarAffineFunction{Float64},MOI.ScalarQuadraticFunction{Float64},Nothing}
     ObjectiveConvexity::Bool
+    CustomModFlag::Bool
 
     LinearLEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64},Int}}
     LinearGEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64},Int}}
@@ -105,6 +106,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     BisectionFunction::Function                                            #
     CutCondition::Function                                                 #
     AddCut::Function                                                       #
+    RelaxFunction::Function                                                # Stores code used to relax the model
 
     GlobalLowerBound::Float64                                              # Global Lower Bound
     GlobalUpperBound::Float64                                              # Global Upper Bound
@@ -199,7 +201,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         # set fallback for potentially user defined functions
         for i in (:LowerProblem, :UpperProblem, :Preprocess, :Postprocess, :RepeatCheck,
                   :ConvergenceCheck, :TerminationCheck, :NodeStorage, :NodeSelection,
-                  :BisectionFunction, :CutCondition, :AddCut)
+                  :BisectionFunction, :CutCondition, :AddCut, :RelaxFunction)
                   default_opt_dict[i] = DummyFunction
         end
 
@@ -317,6 +319,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
         m.Objective = nothing
         m.ObjectiveConvexity = false
+        m.CustomModFlag = false
 
         # Historical Information
         m.History = NodeHistory()

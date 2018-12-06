@@ -1,4 +1,5 @@
 include("ImplicitLowerEvaluator.jl")
 include("ImplicitUpperEvaluator.jl")
 include("ImplicitBisection.jl")
+include("ImplicitRelax.jl")
 include("ImplicitSolver.jl")

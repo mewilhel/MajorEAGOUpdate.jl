@@ -25,6 +25,8 @@ end
 
 function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
 
+    println("started lower bound")
+
     # Copies initial model into working model (if initial model isn't dummy)
     # A dummy model is left iff all terms are relaxed
     if x.InitialRelaxedOptimizer != DummyOptimizer()
@@ -33,35 +35,28 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
         x.Debug1 = x.InitialRelaxedOptimizer
     end
 
-    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
-
     #Update_VariableBounds_Lower!(x,y,x.WorkingRelaxedOptimizer)
     Update_VariableBounds_Lower1!(x,y,x.WorkingRelaxedOptimizer)
-    #println("fixed lower variable bounds")
 
-    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
+    x.RelaxFunction(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = true)
+    x.RelaxFunction(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
 
-    RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = true)
-    RelaxModel!(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
-    #println("model was relaxed")
+    println("post lower bound relaxation")
 
     # Optimizes the object
     #tt = stdout
     #redirect_stdout()
-    nvout = MOI.get(x.WorkingRelaxedOptimizer, MOI.NumberOfVariables())
     MOI.optimize!(x.WorkingRelaxedOptimizer)
     #return x.WorkingRelaxedOptimizer               # CHANGE ME
     #redirect_stdout(tt)
 
+    println("optimized lower bound relaxation")
+
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.TerminationStatus())
-    #println("term status: $termination_status")
     objvalue = MOI.get(x.WorkingRelaxedOptimizer, MOI.ObjectiveValue())
     if (termination_status == MOI.Success)
-        #println("result count number: $(MOI.get(x.WorkingRelaxedOptimizer, MOI.ResultCount()))")
-        #@assert MOI.get(x.WorkingRelaxedOptimizer, MOI.ResultCount()) > 0
         result_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.PrimalStatus())
-        #println("results status: $result_status")
         if (result_status != MOI.FeasiblePoint)
             x.CurrentLowerInfo.Feasibility = false
             x.CurrentLowerInfo.Value = Inf

@@ -64,8 +64,8 @@ mutable struct ImplicitLowerEvaluator{N} <: MOI.AbstractNLPEvaluator
         d.P = fill(IntervalType(0.0),(1,))
         d.X = fill(IntervalType(0.0),(1,))
 
-        last_p = Float64[0.0]
-        ref_p = Float64[0.0]
+        d.last_p = Float64[0.0]
+        d.ref_p = Float64[0.0]
 
         d.disable_1storder = false
         d.disable_2ndorder = true
@@ -84,13 +84,15 @@ function build_lower_evaluator!(d::ImplicitLowerEvaluator, impfun::Function, np:
                                 user_sparse = nothing, state_jac = DummyFunction)
 
     # setup objective and constraint functions
+    d.has_nlobj = obj != DummyFunction
+    println("d.has_nlobj: $(d.has_nlobj)")
     d.objective_fun = obj
     d.constraints_fun = constr
     d.state_fun = impfun
-    yimp = y -> d.state_fun(y[(np+1):(nx+np)],y[1:np])
+    yimp = y -> d.state_fun(y[1:nx],y[(nx+1):(nx+np)])
 
     if (state_jac == DummyFunction)
-        d.state_jac_fun = (x,p) -> ForwardDiff.jacobian(yimp,vcat(x,p))[:,(np+1):(nx+np)]
+        d.state_jac_fun = (x,p) -> ForwardDiff.jacobian(yimp,vcat(x,p))[:,1:nx]
     else
         d.state_jac_fun = state_jac
     end
@@ -145,31 +147,34 @@ function set_last_node!(x::ImplicitLowerEvaluator,n::NodeBB)
 end
 
 # LOOKS GREAT!
-function relax_implicit!(d::ImplicitLowerEvaluator,p)
+function relax_implicit!(d::ImplicitLowerEvaluator,y)
+    nx = d.nx
+    np = d.np
     # Generate new parameters for implicit relaxation if necessary
     if ~SameBox(d.current_node,d.last_node,0.0)
         d.init_relax_run = false
         d.obj_eval = false
         d.cnstr_eval = false
         d.last_node = d.current_node
-        for i in 1:d.np
-            d.ref_p[i] = (d.current_node.LowerVar[i]+d.current_node.UpperVar[i])/2.0
-            d.P[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
+        for i in 1:nx
+            d.X[i] = IntervalType(d.current_node.LowerVar[i],d.current_node.UpperVar[i])
         end
-        for j in (d.np+1):(d.np+d.nx)
-            shiftj = j - d.np
-            d.X[shiftj] = IntervalType(d.current_node.LowerVar[j],d.current_node.UpperVar[j])
+        for j in 1:np
+            shiftj = j + nx
+            d.ref_p[j] = (d.current_node.LowerVar[shiftj]+d.current_node.UpperVar[shiftj])/2.0
+            d.P[j] = IntervalType(d.current_node.LowerVar[shiftj],d.current_node.UpperVar[shiftj])
         end
         d.state_ref_relaxation = GenExpansionParams(d.state_fun, d.state_jac_fun, d.X, d.P, d.ref_p, d.imp_opts)
     end
     # Generate new value of implicit relaxation
-    if (d.ref_p != p) || (~d.init_relax_run)
+    if (d.ref_p != view(y,(nx+1):(nx+np),1)) || (~d.init_relax_run)
         d.obj_eval = false
         d.cnstr_eval = false
         pMC = fill(zero(MC{d.np}),(d.np,))
-        for i in 1:d.np
-            sg_pi = seedg(Float64,i,d.np)
-            pMC[i] = MC{d.np}(p[i],p[i],d.P[i],sg_pi,sg_pi,false)
+        for j in 1:d.np
+            shiftj = j + nx
+            sg_pi = seedg(Float64,shiftj,np)
+            pMC[j] = MC{d.np}(y[shiftj],y[shiftj],d.P[j],sg_pi,sg_pi,false)
         end
         d.state_relax = MC_impRelax(d.state_fun, d.state_jac_fun, pMC, d.ref_p, d.X, d.P, d.imp_opts, d.state_ref_relaxation)
     else
@@ -179,9 +184,11 @@ end
 
 # LOOKS GREAT!
 function relax_objective!(d::ImplicitLowerEvaluator)
+    println("started relax objective")
     if ~d.obj_eval
         d.obj_relax = d.objective_fun(d.state_relax,d.var_relax)
         d.obj_eval = true
+        println("d.obj_relax: $(d.obj_relax)")
     end
 end
 
@@ -194,11 +201,11 @@ function relax_constraints!(d::ImplicitLowerEvaluator)
 end
 
 # LOOKS GREAT!
-function MOI.eval_objective(d::ImplicitLowerEvaluator, p)
+function MOI.eval_objective(d::ImplicitLowerEvaluator, y)
     d.eval_objective_timer += @elapsed begin
-        val = zero(eltype(p))
+        val = zero(eltype(y))
         if d.has_nlobj
-            relax_implicit!(d,p)
+            relax_implicit!(d,y)
             relax_objective!(d)
             val = d.obj_relax.cv
         else
@@ -209,10 +216,10 @@ function MOI.eval_objective(d::ImplicitLowerEvaluator, p)
 end
 
 # LOOKS GREAT!
-function MOI.eval_constraint(d::ImplicitLowerEvaluator, g, p)
+function MOI.eval_constraint(d::ImplicitLowerEvaluator, g, y)
     d.eval_constraint_timer += @elapsed begin
         if d.ng > 0
-            relax_implicit!(d,p)
+            relax_implicit!(d,y)
             relax_constraints!(d)
             for i in 1:d.ng
                 g[i] = d.cnstr_relax[i].cv
@@ -223,10 +230,10 @@ function MOI.eval_constraint(d::ImplicitLowerEvaluator, g, p)
 end
 
 # LOOKS GREAT!
-function MOI.eval_objective_gradient(d::ImplicitLowerEvaluator, df, p)
+function MOI.eval_objective_gradient(d::ImplicitLowerEvaluator, df, y)
     d.eval_objective_timer += @elapsed begin
         if d.has_nlobj
-            relax_implicit!(d,p)
+            relax_implicit!(d,y)
             relax_objective!(d)
             for j in 1:d.np
                 df[j] = d.obj_relax.cv_grad[j]
@@ -260,10 +267,10 @@ function _hessian_lagrangian_structure(d::ImplicitLowerEvaluator)
 end
 
 # LOOKS GREAT!
-function MOI.eval_constraint_jacobian(d::ImplicitLowerEvaluator,g,p)
+function MOI.eval_constraint_jacobian(d::ImplicitLowerEvaluator,g,y)
     d.eval_constraint_jacobian_timer += @elapsed begin
         if d.ng > 0
-            relax_implicit!(d,p)
+            relax_implicit!(d,y)
             relax_constraints!(d)
             fill!(g, 0.0)
             if (d.ng == 1) && (d.np == 1)
@@ -280,15 +287,15 @@ function MOI.eval_constraint_jacobian(d::ImplicitLowerEvaluator,g,p)
 end
 
 # LOOKS GREAT!
-function MOI.eval_constraint_jacobian_product(d::ImplicitLowerEvaluator, y, p, w)
+function MOI.eval_constraint_jacobian_product(d::ImplicitLowerEvaluator, out, y, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
             if d.ng > 0
-                relax_implicit!(d,p)
+                relax_implicit!(d,y)
                 relax_constraints!(d)
-                fill!(y, 0.0)
+                fill!(out, 0.0)
                 for (i,j) in d.jacobian_sparsity
-                    y[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
+                    out[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
                 end
             end
         end
@@ -299,15 +306,15 @@ function MOI.eval_constraint_jacobian_product(d::ImplicitLowerEvaluator, y, p, w
 end
 
 # PROBABLY DONE
-function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitLowerEvaluator, y, p, w)
+function MOI.eval_constraint_jacobian_transpose_product(d::ImplicitLowerEvaluator, out, y, w)
     if (!d.disable_1storder)
         d.eval_constraint_jacobian_timer += @elapsed begin
             if d.ng > 0
-                relax_implicit!(d,p)
+                relax_implicit!(d,y)
                 relax_constraints!(d)
-                fill!(y, 0.0)
+                fill!(out, 0.0)
                 for (i,j) in d.jacobian_sparsity
-                    y[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
+                    out[i] += d.cnstr_relax[i].cv_grad[j]*w[j]
                 end
             end
         end

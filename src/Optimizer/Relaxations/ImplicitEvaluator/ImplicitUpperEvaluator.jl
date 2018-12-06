@@ -49,26 +49,26 @@ mutable struct ImplicitUpperEvaluator <: MOI.AbstractNLPEvaluator
 end
 
 function reform_1!(out,y,f,g,h,np,ng,nx)
-    out[1] = f(y[(np+1):(np+nx)],y[1:np])
-    out[2:(ng+1)] = g(y[(np+1):(np+nx)],y[1:np])
-    out[(ng+2):(nx+ng+1)] = h(y[(np+1):(np+nx)],y[1:np])
+    out[1] = f(y[1:nx],y[(nx+1):(nx+np)])
+    out[2:(ng+1)] = g(y[1:nx],y[(nx+1):(nx+np)])
+    out[(ng+2):(nx+ng+1)] = h(y[1:nx],y[(nx+1):(nx+np)])
     out[(2+ng+nx):(1+ng+2*nx)] = -out[(ng+2):(nx+ng+1)]
 end
 
 function reform_2!(out,y,g,h,np,ng,nx)
-    out[1:ng] = g(y[(np+1):(np+nx)],y[1:np])
-    out[(ng+1):(nx+ng)] = h(y[(np+1):(np+nx)],y[1:np])
-    out[(1+ng+nx):(ng+2*nx)] = -h(y[(np+1):(np+nx)],y[1:np])
+    out[1:ng] = g(y[1:nx],y[(nx+1):(nx+np)])
+    out[(ng+1):(nx+ng)] = h(y[1:nx],y[(nx+1):(nx+np)])
+    out[(1+ng+nx):(ng+2*nx)] = -out[(ng+1):(nx+ng)]
 end
 
 function reform_3!(out,y,f,h,np,nx)
-    out[1] = f(y[(np+1):(np+nx)],y[1:np])
-    out[2:(nx+1)] = h(y[(np+1):(np+nx)],y[1:np])
+    out[1] = f(y[1:nx],y[(nx+1):(nx+np)])
+    out[2:(nx+1)] = h(y[1:nx],y[(nx+1):(nx+np)])
     out[(nx+2):(2*nx+1)] = -out[2:(nx+1)]
 end
 
 function reform_4!(out,y,h,np,nx)
-    out[1:nx] = h(y[(np+1):(np+nx)],y[1:np])
+    out[1:nx] = h(y[1:nx],y[(nx+1):(nx+np)])
     out[(nx+1):(2*nx)] = -out[1:nx]
 end
 
@@ -90,7 +90,7 @@ function build_upper_evaluator!(d::ImplicitUpperEvaluator, impfun, np, nx;
         d.has_nlobj = true
     elseif (obj == DummyFunction && d.ng == 0)
         d.fg = (out,x) -> reform_4!(out,x,impfun,np,nx)
-    elseif ~(constr == DummyFunction)
+    elseif (d.ng > 0)
         d.fg = (out,x) -> reform_2!(out,x,constr,impfun,np,ng,nx)
     else
         d.fg = (out,x) -> reform_3!(out,x,obj,impfun,np,nx)
@@ -100,16 +100,17 @@ function build_upper_evaluator!(d::ImplicitUpperEvaluator, impfun, np, nx;
     d.last_y = zeros(d.ny)
     if (obj != DummyFunction)
         d.value_storage = zeros(1+ng+2*nx)
-        d.diff_result = zeros(1+ng+2*nx,np+nx)
+        d.diff_result = zeros(1+ng+2*nx, nx+np)
     else
         d.value_storage = zeros(ng+2*nx)
-        d.diff_result = zeros(ng+2*nx,np+nx)
+        d.diff_result = zeros(ng+2*nx, nx+np)
     end
 
     d.diff_tape = ReverseDiff.JacobianTape(d.fg, d.value_storage, d.last_y)
     if length(d.diff_tape) < RD_COMPILE_SWITCH
         d.diff_tape = ReverseDiff.compile(d.diff_tape)
     end
+
 end
 
 # LOOKS GREAT!

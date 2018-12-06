@@ -77,7 +77,8 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     #m.UpperProblem(m,m.Stack[1])
     #m.Postprocess(m,m.Stack[1])
 
-    CustomMod!(m)
+    m.CustomModFlag = CustomMod! == TrivFunction
+    CustomMod!(m,CustomModArgs)
 
     # Runs the branch and bound routine
     SolveNLP!(m)
