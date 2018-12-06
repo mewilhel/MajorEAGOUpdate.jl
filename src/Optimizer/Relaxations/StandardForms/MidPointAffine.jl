@@ -13,10 +13,10 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
     # Add objective
     if src.WorkingEvaluatorBlock.has_objective
         df = zeros(Float64,ngrad)
-        println("df: $df")
         f = MOI.eval_objective(evaluator, midx)
         println("f: $f")
         MOI.eval_objective_gradient(evaluator, df, midx)
+        println("df: $df")
         MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),  MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(df, var), f-sum(midx.*df)))
     end
 

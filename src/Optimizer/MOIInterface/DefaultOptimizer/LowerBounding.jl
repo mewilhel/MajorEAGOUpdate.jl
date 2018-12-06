@@ -54,13 +54,15 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
 
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.TerminationStatus())
-    objvalue = MOI.get(x.WorkingRelaxedOptimizer, MOI.ObjectiveValue())
+    println("termination_status: $(termination_status)")
     if (termination_status == MOI.Success)
         result_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.PrimalStatus())
+        println("result_status: $(result_status)")
         if (result_status != MOI.FeasiblePoint)
             x.CurrentLowerInfo.Feasibility = false
             x.CurrentLowerInfo.Value = Inf
         else
+            objvalue = MOI.get(x.WorkingRelaxedOptimizer, MOI.ObjectiveValue())
             x.CurrentLowerInfo.Feasibility = true
             x.CurrentLowerInfo.Value = objvalue
             x.CurrentLowerInfo.Solution[1:end] = MOI.get(x.WorkingRelaxedOptimizer, MOI.VariablePrimal(), x.LowerVariables)
