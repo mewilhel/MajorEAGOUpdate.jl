@@ -163,9 +163,12 @@ end
 @define_addconstraint_linear MOI.ScalarAffineFunction{Float64} MOI.LessThan{Float64} LinearLEQConstraints
 @define_addconstraint_linear MOI.ScalarAffineFunction{Float64} MOI.GreaterThan{Float64} LinearGEQConstraints
 @define_addconstraint_linear MOI.ScalarAffineFunction{Float64} MOI.EqualTo{Float64} LinearEQConstraints
+@define_addconstraint_linear MOI.ScalarAffineFunction{Float64} MOI.Interval{Float64} LinearITVConstraints
+
 @define_addconstraint_quadratic MOI.ScalarQuadraticFunction{Float64} MOI.LessThan{Float64} QuadraticLEQConstraints
 @define_addconstraint_quadratic MOI.ScalarQuadraticFunction{Float64} MOI.GreaterThan{Float64} QuadraticGEQConstraints
 @define_addconstraint_quadratic MOI.ScalarQuadraticFunction{Float64} MOI.EqualTo{Float64} QuadraticEQConstraints
+@define_addconstraint_quadratic MOI.ScalarQuadraticFunction{Float64} MOI.Interval{Float64} QuadraticITVConstraints
 
 #=
     Adds nonlinear constraints

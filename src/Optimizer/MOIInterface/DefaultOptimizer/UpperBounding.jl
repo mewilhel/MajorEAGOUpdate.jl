@@ -2,13 +2,11 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
     if is_integer_feasible(x)
         # Copies initial model into working model (if initial model isn't dummy)
         if x.InitialUpperOptimizer != DummyOptimizer()
-            #MOI.copy_to(x.WorkingUpperOptimizer,x.InitialUpperOptimizer)
             x.WorkingUpperOptimizer = deepcopy(x.InitialUpperOptimizer)
         end
 
         # Updates variables bounds
         Update_VariableBounds_Upper!(x,y,x.WorkingUpperOptimizer)
-        x.Debug2 = x.WorkingUpperOptimizer
 
         # Optimizes the object
         TT = stdout
@@ -18,20 +16,10 @@ function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
 
         # Process output info and save to CurrentUpperInfo object
         termination_status = MOI.get(x.WorkingUpperOptimizer, MOI.TerminationStatus())
-        #println("termination_status: $termination_status")
-        objvalue = MOI.get(x.WorkingUpperOptimizer, MOI.ObjectiveValue())
-        #println("objvalue: $objvalue")
-        if termination_status == MOI.Success
-            @assert MOI.get(x.WorkingUpperOptimizer, MOI.ResultCount()) > 0
-            result_status = MOI.get(x.WorkingUpperOptimizer, MOI.PrimalStatus())
-            if result_status != MOI.FeasiblePoint
-                x.CurrentUpperInfo.Feasibility = false
-                x.CurrentUpperInfo.Value = Inf
-            end
+        result_status = MOI.get(x.WorkingUpperOptimizer, MOI.PrimalStatus())
+        if (termination_status == MOI.Success) && (result_status == MOI.FeasiblePoint)
             x.CurrentUpperInfo.Feasibility = true
-            x.CurrentUpperInfo.Value = objvalue
-            temp1 = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
-            temp2 = x.CurrentUpperInfo.Solution[1:end]
+            x.CurrentUpperInfo.Value = MOI.get(x.WorkingUpperOptimizer, MOI.ObjectiveValue())
             x.CurrentUpperInfo.Solution[1:end] = MOI.get(x.WorkingUpperOptimizer, MOI.VariablePrimal(), x.UpperVariables)
         else
             x.CurrentUpperInfo.Feasibility = false

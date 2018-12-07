@@ -70,41 +70,42 @@ function Update_VariableBounds_Upper!(m::Optimizer,y::NodeBB,z::T) where {T<:MOI
 end
 
 function SetLocalNLP!(m::Optimizer)
-    #println("ran set local nlp")
-    #m.WorkingUpperOptimizer = deepcopy(m.NLPOptimizer)
-
-    # Add variables to model
-    #m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
-    #for (i,var) in enumerate(m.VariableInfo)
-    #    push!(m.VariableIndex, MOI.add_constraint(m.WorkingUpperOptimizer,
-    #                           MOI.SingleVariable(m.UpperVariables[i]),
-    #                           MOI.Interval(var.lower_bound,var.upper_bound)))
-    #end
 
     # Add linear and quadratic constraints to model
     for (func, set) in m.LinearLEQConstraints
-         println("add constr 1")
+         println("add constr 1A")
          MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearGEQConstraints
-        println("add constr 2")
+        println("add constr 2A")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearEQConstraints
-        println("add constr 3")
+        println("add constr 3A")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
+    for (func,set,ind) in m.LinearITVConstraints
+        println("add constr 4A")
+        MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.GreaterThan{Float64}(set.lower))
+        MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.LessThan{Float64}(set.upper))
+    end
+
     for (func, set) in m.QuadraticLEQConstraints
-        println("add constr 4")
+        println("add constr 1B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticGEQConstraints
-        println("add constr 5")
+        println("add constr 2B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticEQConstraints
-        println("add constr 6")
+        println("add constr 3B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
+    end
+    for (func,set,ind) in m.QuadraticITVConstraints
+        println("add constr 4B")
+        MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.GreaterThan{Float64}(set.lower))
+        MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.LessThan{Float64}(set.upper))
     end
 
     # Add nonlinear evaluation block

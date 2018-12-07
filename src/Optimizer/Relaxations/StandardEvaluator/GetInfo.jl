@@ -1,6 +1,5 @@
 # looks good
 function MOI.eval_objective(d::Evaluator, x)
-    println("ran eval objective")
     d.eval_objective_timer += @elapsed begin
         forward_reverse_pass(d,x)
         val = zero(eltype(x))
@@ -34,14 +33,12 @@ end
 
 # looks good
 function MOI.eval_objective_gradient(d::Evaluator, df, x)
-    println("ran gradient eval:")
     d.eval_objective_timer += @elapsed begin
         forward_reverse_pass(d,x)
         if d.has_nlobj
             if ~d.objective.numvalued[1]
                 for j in 1:length(d.objective.setstorage[1].cv_grad)
                     df[j] = d.objective.setstorage[1].cv_grad[j]
-                    println("df[j]: $(df[j])")
                 end
             end
         else

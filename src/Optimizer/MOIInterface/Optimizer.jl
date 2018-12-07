@@ -69,9 +69,11 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     LinearLEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64},Int}}
     LinearGEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64},Int}}
     LinearEQConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64},Int}}
+    LinearITVConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.Interval{Float64},Int}}
     QuadraticLEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.LessThan{Float64},Int}}
     QuadraticGEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.GreaterThan{Float64},Int}}
     QuadraticEQConstraints::Vector{Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.EqualTo{Float64},Int}}
+    QuadraticITVConstraints::Vector{Tuple{MOI.ScalarAffineFunction{Float64}, MOI.Interval{Float64},Int}}
     QuadraticConvexity::Vector{Bool}
 
     UniQuadraticLEQConstraints::Vector{Tuple{Float64,Float64,Float64,Int}}
@@ -251,7 +253,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         default_opt_dict[:PoorManLPRepts] = 1
 
         # Termination Limits
-        default_opt_dict[:IterationLimit] = 5 #Int(1E6)
+        default_opt_dict[:IterationLimit] = 10 #Int(1E6)
         default_opt_dict[:NodeLimit] = Int(1E6)
         default_opt_dict[:AbsoluteTolerance] = 1E-4
         default_opt_dict[:RelativeTolerance] = 1E-4
@@ -301,9 +303,12 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         m.LinearLEQConstraints = Tuple{MOI.ScalarAffineFunction{Float64}, MOI.LessThan{Float64}, Int}[]
         m.LinearGEQConstraints = Tuple{MOI.ScalarAffineFunction{Float64}, MOI.GreaterThan{Float64}, Int}[]
         m.LinearEQConstraints = Tuple{MOI.ScalarAffineFunction{Float64}, MOI.EqualTo{Float64}, Int}[]
+        m.LinearITVConstraints = Tuple{MOI.ScalarAffineFunction{Float64}, MOI.Interval{Float64}, Int}[]
+
         m.QuadraticLEQConstraints = Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.LessThan{Float64}, Int}[]
         m.QuadraticGEQConstraints = Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.GreaterThan{Float64}, Int}[]
         m.QuadraticEQConstraints = Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.EqualTo{Float64}, Int}[]
+        m.QuadraticITVConstraints = Tuple{MOI.ScalarQuadraticFunction{Float64}, MOI.Interval{Float64}, Int}[]
 
         m.UniQuadraticLEQConstraints = Tuple{Float64,Float64,Float64,Int}[]
         m.UniQuadraticGEQConstraints = Tuple{Float64,Float64,Float64,Int}[]

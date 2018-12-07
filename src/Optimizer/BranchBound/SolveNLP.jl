@@ -92,13 +92,9 @@ function SolveNLP!(x::Optimizer)
         PrintResults!(x,true)
       end
       x.History.CutCount[x.CurrentIterationCount] = x.CutIterations
-      #println("post cut, lower feas: $(x.CurrentLowerInfo.Feasibility)")
       # checks for infeasibility stores solution
       if (x.CurrentLowerInfo.Feasibility)
-        #println("lower is feas")
         if (~x.ConvergenceCheck(x))
-          #println("didn't converge")
-          #println("CurrentNode: $(CurrentNode)")
           # Solves upper bounding problem
           #UpperProblemTime = @elapsed x.UpperProblem(x,CurrentNode)
           UpperProblemTime = 0.0

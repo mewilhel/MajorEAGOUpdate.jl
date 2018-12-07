@@ -1,21 +1,28 @@
-#with_optimizer(Ipopt.Optimizer, print_level=0)
-#with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer())
-
-#m = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = GLPK.Optimizer()))
-m = Model(with_optimizer(EAGO.Optimizer, InitialRelaxedOptimizer = CPLEX.Optimizer()))
+#m = Model(with_optimizer(Ipopt.Optimizer))
+m = Model(with_optimizer(EAGO.Optimizer))
 
 # Need nonnegativity for (rotated) second-order cone
 @variable(m, 0 <= x <= 1)
 @variable(m, 0 <= y <= 1)
 @variable(m, 0 <= z <= 1)
+#@variable(m, 0.496094 <= x <= 1)
+#@variable(m, 0 <= y <= 1)
+#@variable(m, 0 <= z <= 1)
+
+
 
 # Maximize x
 @objective(m, Max, x)
+#@objective(m, Min, -x)
+
 
 # Subject to 1 linear and 2 nonlinear constraints
+#@constraint(m, x + y + z == 1)
+#@constraint(m, x*x + y*y - z*z <= 0)
+#@constraint(m, x*x - y*z <= 0)
 @constraint(m, x + y + z == 1)
-@constraint(m, x*x + y*y - z*z <= 0)
-@constraint(m, x*x - y*z <= 0)
+@NLconstraint(m, x*x + y*y - z*z <= 0)
+@NLconstraint(m, x*x - y*z <= 0)
 
 # Print the model to check correctness
 print(m)
