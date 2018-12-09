@@ -153,6 +153,9 @@ function SolveNLP!(x::Optimizer)
     x.CurrentIterationCount += 1
   end
 
-  x.ObjectiveValue = x.GlobalUpperBound           # Sets the solution value found
+  x.ObjectiveValue = x.GlobalUpperBound
+  if (x.OptimizationSense == MOI.MaxSense)
+        x.ObjectiveValue *= -1.0
+  end
   PrintSolution!(x)                              # Prints the solution
 end

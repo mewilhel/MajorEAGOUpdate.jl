@@ -14,6 +14,30 @@ function copy_to_subexpr(T::S,x::JuMP.SubexpressionStorage) where {S<:DataType}
                                temp_bool, x.linearity)
 end
 
+function MinusObjective!(d::Evaluator{T}) where T<:Real
+    if (d.has_nlobj)
+        # shifts the adjacency matrix to introduce -f(x) as first element of nd array
+        rowval = rowvals(d.objective.adj) .+ 1
+        nzval = nonzeros(d.objective.adj)
+        m, n = size(d.objective.adj)
+        pushfirst!(d.objective.adj.colptr,1)
+        d.objective.adj = SparseMatrixCSC{Bool,Int}(m+1,n+1,d.objective.adj.colptr,rowval,nzval)
+        d.objective.adj[1,2] = true
+
+        # shifts the node list (and parents)
+        shift_nd = [JuMP.NodeData(JuMP.CALLUNIVAR,2,2)]
+        for nd in d.objective.nd
+            push!(shift_nd,JuMP.NodeData(nd.nodetype,nd.index,nd.parent+1))
+        end
+        d.objective.nd = shift_nd
+
+        nvflag = length(d.objective.numvalued) > 0 ? d.objective.numvalued[1] : false
+        pushfirst!(d.objective.numvalued,nvflag)
+        pushfirst!(d.objective.numberstorage,0.0)
+        pushfirst!(d.objective.setstorage,zero(T))
+    end
+end
+
 # TO DO
 function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.AbstractNLPEvaluator}
 

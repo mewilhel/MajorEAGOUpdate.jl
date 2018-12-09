@@ -14,8 +14,26 @@ function RelaxLinear!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
     end
 
     if isa(src.Objective, MOI.SingleVariable)
-        MOI.set(trg, MOI.ObjectiveFunction{MOI.SingleVariable}(), src.Objective)
+        if (src.OptimizationSense == MOI.MinSense)
+            MOI.set(trg, MOI.ObjectiveFunction{MOI.SingleVariable}(), src.Objective)
+        elseif (src.OptimizationSense == MOI.MaxSense)
+            neg_obj_var = MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm{Float64}(-1.0, src.Objective.variable)], 0.0)
+            MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), neg_obj_var)
+        else
+            error("Objective sense must be MOI.MinSense or MOI.MaxSense")
+        end
     elseif isa(src.Objective, MOI.ScalarAffineFunction{Float64})
-        MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), src.Objective)
+        if (src.OptimizationSense == MOI.MinSense)
+            MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), src.Objective)
+        elseif (src.OptimizationSense == MOI.MaxSense)
+            neg_obj_aff_terms = []
+            for term in src.Objective.terms
+                push!(neg_obj_aff_terms,MOI.ScalarAffineTerm{Float64}(-term.coefficient,term.variable_index))
+            end
+            neg_obj_aff = MOI.ScalarAffineFunction{Float64}(neg_obj_aff_terms, -src.Objective.constant)
+            MOI.set(trg, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(), neg_obj_aff)
+        else
+            error("Objective sense must be MOI.MinSense or MOI.MaxSense")
+        end
     end
 end

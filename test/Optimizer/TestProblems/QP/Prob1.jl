@@ -1,4 +1,4 @@
-#m = Model(with_optimizer(Ipopt.Optimizer))
+m = Model(with_optimizer(Ipopt.Optimizer))
 m = Model(with_optimizer(EAGO.Optimizer))
 
 # Need nonnegativity for (rotated) second-order cone
@@ -21,8 +21,8 @@ m = Model(with_optimizer(EAGO.Optimizer))
 #@constraint(m, x*x + y*y - z*z <= 0)
 #@constraint(m, x*x - y*z <= 0)
 @constraint(m, x + y + z == 1)
-@NLconstraint(m, x*x + y*y - z*z <= 0)
-@NLconstraint(m, x*x - y*z <= 0)
+@constraint(m, x*x + y*y - z*z <= 0)
+@constraint(m, x*x - y*z <= 0)
 
 # Print the model to check correctness
 print(m)
@@ -31,7 +31,9 @@ print(m)
 JuMP.optimize!(m)
 
 # Solution
-println("Objective value: ", JuMP.objective_value(m))
+println("Objective Value: ", JuMP.objective_value(m))
+println("Termination Status: ", JuMP.termination_status(m))
+println("Primal Status: ", JuMP.primal_status(m))
 println("x = ", JuMP.value(x))
 println("y = ", JuMP.value(y))
 println("y = ", JuMP.value(z))

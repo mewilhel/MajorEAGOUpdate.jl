@@ -30,7 +30,6 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
         end
     end
 
-    #println("optimize nlp constraint bounds: $(m.NLPData.constraint_bounds)")
     # Get various other sizes
     num_nlp_constraints = length(m.NLPData.constraint_bounds)
     m.ContinuousSolution = zeros(Float64,NewVariableSize)
@@ -69,14 +68,7 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     # Sets upper bounding problem using terms specified in optimizer
     SetLocalNLP!(m)
 
-    # Tests Initial Routines
-    #m.Preprocess(m,m.Stack[1])
-    #feas1 = PoorManLP(m,m.Stack[1])
-    #feas2 = OBBT(m,m.Stack[1])
-    #m.LowerProblem(m,m.Stack[1])
-    #m.UpperProblem(m,m.Stack[1])
-    #m.Postprocess(m,m.Stack[1])
-
+    # Runs a customized function if one is provided
     m.CustomModFlag = (CustomMod! != TrivFunction)
     if m.CustomModFlag
         CustomMod!(m,CustomModArgs)

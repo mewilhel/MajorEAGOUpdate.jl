@@ -8,7 +8,7 @@ function PrintSolution!(x::Optimizer)
   temp::Float64 = 0.0
   println("First Solution Found at Node $(x.FirstSolutionNode)")
   if (x.Verbosity == 1 || x.Verbosity == 2 || x.Verbosity == 3)
-    println("UBD = $(x.GlobalUpperBound)")
+    println("UBD = $(x.ObjectiveValue)")
     println("Solution is :")
     if (x.FeasibleSolutionFnd)
       for i=1:length(x.ContinuousSolution)
