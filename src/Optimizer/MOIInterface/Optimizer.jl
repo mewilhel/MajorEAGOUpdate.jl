@@ -253,7 +253,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         default_opt_dict[:PoorManLPRepts] = 1
 
         # Termination Limits
-        default_opt_dict[:IterationLimit] = 10 #Int(1E6)
+        default_opt_dict[:IterationLimit] = 30 #Int(1E6)
         default_opt_dict[:NodeLimit] = Int(1E6)
         default_opt_dict[:AbsoluteTolerance] = 1E-4
         default_opt_dict[:RelativeTolerance] = 1E-4

@@ -24,9 +24,6 @@ m = Model(with_optimizer(EAGO.Optimizer))
 @constraint(m, x*x + y*y - z*z <= 0)
 @constraint(m, x*x - y*z <= 0)
 
-# Print the model to check correctness
-print(m)
-
 # Solve with Gurobi
 JuMP.optimize!(m)
 

@@ -89,37 +89,29 @@ function SetLocalNLP!(m::Optimizer)
 
     # Add linear and quadratic constraints to model
     for (func, set) in m.LinearLEQConstraints
-         println("add constr 1A")
          MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearGEQConstraints
-        println("add constr 2A")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.LinearEQConstraints
-        println("add constr 3A")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func,set,ind) in m.LinearITVConstraints
-        println("add constr 4A")
         MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.GreaterThan{Float64}(set.lower))
         MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.LessThan{Float64}(set.upper))
     end
 
     for (func, set) in m.QuadraticLEQConstraints
-        println("add constr 1B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticGEQConstraints
-        println("add constr 2B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func, set) in m.QuadraticEQConstraints
-        println("add constr 3B")
         MOI.add_constraint(m.InitialUpperOptimizer,func,set)
     end
     for (func,set,ind) in m.QuadraticITVConstraints
-        println("add constr 4B")
         MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.GreaterThan{Float64}(set.lower))
         MOI.add_constraint(m.InitialUpperOptimizer, func, MOI.LessThan{Float64}(set.upper))
     end
@@ -258,29 +250,21 @@ function Update_VariableBounds_Lower1!(m::Optimizer,y::NodeBB,z::T) where {T<:MO
     # Updates variables bounds
     typevar = m.LowerVariables
     for (i,var) in enumerate(m.VariableInfo)
-        #println("i: $i")
-        #println("var: $var")
         var_xi = MOI.SingleVariable(typevar[i])
-        #println("var_xi: $var_xi")
         if var.is_integer
         else
             if var.is_fixed
-                #println("ran fixed")
                 MOI.add_constraint(z, var_xi, MOI.EqualTo(y.LowerVar[i]))
             elseif var.has_lower_bound
                 if var.has_upper_bound
-                    #println("has both bounds")
                     MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
                     MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 else
-                    #println("has lower bound only")
                     MOI.add_constraint(z, var_xi, MOI.GreaterThan(y.LowerVar[i]))
                 end
             elseif var.has_upper_bound
-                #println("has upper bound only")
                 MOI.add_constraint(z, var_xi, MOI.LessThan(y.UpperVar[i]))
             end
         end
-        #push!(m.VariableIndexUpp,VarTupleUpp)
     end
 end

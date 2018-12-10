@@ -43,14 +43,18 @@ function MidPointAffine!(src::Optimizer,trg,n::NodeBB,r)
                 for i in 1:ngrad
                     constant -= midx[i]*dg[j,i]
                 end
-                MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(dg[j,:], var), 0.0), MOI.LessThan(bns.upper-constant))
+                saf = MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(dg[j,:], var), 0.0)
+                set = MOI.LessThan(bns.upper-constant)
+                MOI.add_constraint(trg, saf, set)
             end
             if bns.lower > -Inf
                 constant = g_cc[j]
                 for i in 1:ngrad
                     constant -= midx[i]*dg_cc[j,i]
                 end
-                MOI.add_constraint(trg, MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(-dg_cc[j,:], var), 0.0), MOI.LessThan(constant))
+                saf = MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(-dg_cc[j,:], var), 0.0)
+                set = MOI.LessThan(constant)
+                MOI.add_constraint(trg, saf, set)
             end
         end
     end
