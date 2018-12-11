@@ -21,11 +21,13 @@ function SolveNLP!(x::Optimizer)
   # terminates when max nodes or iteration is reach, or when node stack is empty
   iterationcountinternal = 0
   while (x.TerminationCheck(x))
+
     iterationcountinternal += 1
-    #println("iterationcountinternal: $iterationcountinternal")
+
     # Fathom nodes with lower bound greater than global upper bound
     x.GlobalLowerBound = FindLowerBound(x)
     x.History.LowerBound[x.CurrentIterationCount] = x.GlobalLowerBound
+
     # Sets conditional save flags
     UBDSaveFlag = false
     UBDTempSaveFlag = false
@@ -33,27 +35,22 @@ function SolveNLP!(x::Optimizer)
     x.CutIterations = 0
 
      # Selects node, deletes it from stack, prints based on verbosity
-    CurrentKey,CurrentNode = x.NodeSelection(x)
+    CurrentKey,CurrentNode = x.NodeSelection(x);  x.CurrentNodeCount -= 1
     (x.Verbosity == 3) && PrintNode!(CurrentKey,CurrentNode) # Prints node in full verbosity mode
 
     # Solves preprocessing/LBD/UBD/postprocessing once to get timing right
     x.CurrentPreprocessInfo.Feasibility = true
     x.CurrentPostprocessInfo.Feasibility = true
     if (x.CurrentIterationCount == 1)
-      #println("start preprocess")
       OldLowerInfo = deepcopy(x.CurrentLowerInfo)
       OldUpperInfo = deepcopy(x.CurrentUpperInfo)
       OldPreprocessInfo = deepcopy(x.CurrentPreprocessInfo)
       OldPostprocessInfo = deepcopy(x.CurrentPostprocessInfo)
       tempNode = copy(CurrentNode)
       x.Preprocess(x,tempNode)
-      #println("ran initial preprocess")
       #x.LowerProblem(x,tempNode)
-      #println("ran initial lower problem")
       x.UpperProblem(x,tempNode)
-      #println("ran initial upper problem")
       x.Postprocess(x,tempNode)
-      #println("ran initial postprocess")
       x.CurrentLowerInfo = OldLowerInfo
       x.CurrentUpperInfo = OldUpperInfo
       x.CurrentPreprocessInfo = OldPreprocessInfo
@@ -71,14 +68,15 @@ function SolveNLP!(x::Optimizer)
 
     x.CurrentUpperInfo.Feasibility = true
     if (x.CurrentPreprocessInfo.Feasibility)
-      # solves & times lower bounding problem
 
+      # solves & times lower bounding problem
       x.LowerProblem(x,CurrentNode)
       LowerProblemTime = 0.0
       x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerTime[x.CurrentIterationCount] = x.History.LowerTime[x.CurrentIterationCount-1]+LowerProblemTime
       x.History.LowerCount += 1
       PrintResults!(x,true)
+
       while x.CutCondition(x)
         x.AddCut!(x); x.CutIterations += 1
         redirect_stdout()
@@ -92,6 +90,7 @@ function SolveNLP!(x::Optimizer)
         PrintResults!(x,true)
       end
       x.History.CutCount[x.CurrentIterationCount] = x.CutIterations
+
       # checks for infeasibility stores solution
       if (x.CurrentLowerInfo.Feasibility)
         if (~x.ConvergenceCheck(x))
@@ -104,15 +103,13 @@ function SolveNLP!(x::Optimizer)
           UBDTempSaveFlag = true
           PrintResults!(x,false)
 
-          #println("Current Upper Value: $(x.CurrentUpperInfo.Value)")
-          #println("Current Upper Feasiblity: $(x.CurrentUpperInfo.Feasibility)")
           # Stores information if better feasible upper bound is formed
           if (x.CurrentUpperInfo.Feasibility)
             if (x.CurrentUpperInfo.Value < x.GlobalUpperBound)
               x.FeasibleSolutionFnd = true
               x.FirstSolutionNode = x.MaximumNodeID
               x.SolutionValue = x.CurrentUpperInfo.Value
-              x.ContinuousSolution = x.CurrentUpperInfo.Solution
+              x.ContinuousSolution[:] = x.CurrentUpperInfo.Solution
               x.History.UpperBound[x.CurrentIterationCount] = x.SolutionValue
               UBDSaveFlag = true
             end

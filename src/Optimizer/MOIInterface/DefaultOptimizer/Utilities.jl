@@ -209,6 +209,7 @@ function CreateInitialNode!(m::Optimizer)
     m.Stack[1] = NodeBB()
     m.Stack[1].LowerVar = LowerVars
     m.Stack[1].UpperVar = UpperVars
+    m.CurrentNodeCount = 1
     m.MaximumNodeID += 1
 end
 

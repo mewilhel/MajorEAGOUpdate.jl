@@ -20,6 +20,7 @@ function RelaxModel!(src::Optimizer,trg,n::NodeBB,r::RelaxationScheme; load::Boo
             end
         end
     else
+        ~isinf(src.GlobalUpperBound) && ObjCutLinear!(src,trg)
         RelaxQuadratic!(trg,src,n,r)
         if ~isempty(src.NonlinearVariable)
             if MOI.supports(trg, MOI.NLPBlock())

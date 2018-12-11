@@ -22,4 +22,5 @@ function Fathom!(d::Optimizer)
       end
     end
   end
+  d.CurrentNodeCount = length(d.Stack)
 end

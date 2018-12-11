@@ -1,20 +1,24 @@
 m = Model(with_optimizer(EAGO.Optimizer))
 
 # ----- Variables ----- #
+@variable(m, y)
 x_Idx = Any[1, 2]
 @variable(m, x[x_Idx])
 JuMP.set_lower_bound(x[1], 0.0)
 JuMP.set_lower_bound(x[2], 0.0)
+JuMP.set_lower_bound(y, -20.0)
 JuMP.set_upper_bound(x[1], 3.0)
 JuMP.set_upper_bound(x[2], 4.0)
+JuMP.set_upper_bound(y, 20.0)
 
 # ----- Constraints ----- #
+@constraint(m, e1, x[1] + x[2] + y == 0.0)
 @NLconstraint(m, e2, x[2] - 8*(x[1])^2 + 8*(x[1])^3-2*(x[1])^4 <= 2.0)
 @NLconstraint(m, e3, 32*(x[1])^3-4*(x[1])^4-88*(x[1])^2+96*x[1]+x[2] <= 36.0)
 
 
 # ----- Objective ----- #
-@objective(m, Min, -x[1]-x[2])
+@objective(m, Min, y)
 
 JuMP.optimize!(m)
 

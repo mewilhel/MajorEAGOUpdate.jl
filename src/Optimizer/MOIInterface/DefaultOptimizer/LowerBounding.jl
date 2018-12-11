@@ -51,11 +51,11 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
             SetDual!(x)
         elseif (result_status == MOI.InfeasiblePoint) || (result_status == MOI.InfeasibilityCertificate)
             x.CurrentLowerInfo.Feasibility = false
-            x.CurrentLowerInfo.Value = Inf
+            x.CurrentLowerInfo.Value = -Inf
         end
     elseif (termination_status == MOI.InfeasibleNoResult)
         x.CurrentLowerInfo.Feasibility = false
-        x.CurrentLowerInfo.Value = Inf
+        x.CurrentLowerInfo.Value = -Inf
     else
         error("Lower problem returned ResultStatusCode = $(result_status). Lower problem must return a
               MOI.FeasiblePoint, MOI.InfeasiblePoint, or MOI.InfeasibilityCertificate status code.")
