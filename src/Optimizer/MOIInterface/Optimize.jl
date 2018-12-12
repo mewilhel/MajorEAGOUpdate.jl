@@ -37,10 +37,6 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
     # Sets any unset functions to default values
     SetToDefault!(m)
 
-    # Copies variables to upper subproblems
-    MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
-    m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
-
     # Copies variables and bounds to lower subproblems
     #PushLowerVariables!(m)
     m.UpperVariables = MOI.add_variables(m.InitialRelaxedOptimizer, m.VariableNumber)
@@ -62,16 +58,28 @@ function MOI.optimize!(m::Optimizer; CustomMod! = TrivFunction, CustomModArgs = 
 
     # Check convexity of objective function and quadratic constraints
 
+    # Creates initial nlp evaluator
+    m.WorkingEvaluatorBlock = m.NLPData
+    if (typeof(m.NLPData.evaluator) != MajorEAGOUpdate.EmptyNLPEvaluator)
+        Built_Evaluator = Build_NLP_Evaluator(MC{m.VariableNumber},m.NLPData.evaluator,m)
+        (m.OptimizationSense == MOI.MaxSense) && MinusObjective!(Built_Evaluator)
+        m.WorkingEvaluatorBlock = MOI.NLPBlockData(m.NLPData.constraint_bounds, Built_Evaluator, m.NLPData.has_objective)
+    end
+
     # Relax initial model terms
     RelaxModel!(m, m.InitialRelaxedOptimizer, m.Stack[1], m.Relaxation, load = true)
-
-    # Sets upper bounding problem using terms specified in optimizer
-    SetLocalNLP!(m)
 
     # Runs a customized function if one is provided
     m.CustomModFlag = (CustomMod! != TrivFunction)
     if m.CustomModFlag
         CustomMod!(m,CustomModArgs)
+    end
+
+    # if optimizer type is supplied for upper, build factory
+    if (~m.UseUpperFactory)
+        MOI.add_variables(m.InitialUpperOptimizer, m.VariableNumber)
+        m.UpperVariables = MOI.add_variables(m.WorkingUpperOptimizer, m.VariableNumber)
+        SetLocalNLP!(m)
     end
 
     # Runs the branch and bound routine

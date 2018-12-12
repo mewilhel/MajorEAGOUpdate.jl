@@ -92,6 +92,10 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     WorkingRelaxedOptimizer::MOI.AbstractOptimizer
     InitialUpperOptimizer::MOI.AbstractOptimizer
     WorkingUpperOptimizer::MOI.AbstractOptimizer
+    LowerFactory::JuMP.OptimizerFactory
+    UpperFactory::JuMP.OptimizerFactory
+    UseLowerFactory::Bool
+    UseUpperFactory::Bool
 
     Relaxation::RelaxationScheme
 
@@ -214,15 +218,20 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
             default_opt_dict[i] = DummyOptimizer()
         end
 
+        default_opt_dict[:UpperFactory] = JuMP.OptimizerFactory(DummyOptimizer(),(),())
+        default_opt_dict[:LowerFactory] = JuMP.OptimizerFactory(DummyOptimizer(),(),())
+        default_opt_dict[:UseUpperFactory] = true
+        default_opt_dict[:UseLowerFactory] = true
+
         default_opt_dict[:Relaxation] = DefaultRelaxationScheme()
         default_opt_dict[:GlobalLowerBound] = -Inf
         default_opt_dict[:GlobalUpperBound] = Inf
 
         # Output specification fields
         #m.Verbosity = 0
-        default_opt_dict[:Verbosity] = 3
+        default_opt_dict[:Verbosity] = 1
         default_opt_dict[:WarmStart] = false
-        default_opt_dict[:OutputInterations] = 1
+        default_opt_dict[:OutputInterations] = 10
         default_opt_dict[:HeaderInterations] = 100
         default_opt_dict[:DigitsDisplayed] = 3
         default_opt_dict[:ReturnHistory] = false

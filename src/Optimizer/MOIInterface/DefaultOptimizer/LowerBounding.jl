@@ -25,20 +25,25 @@ function EAGODefault_LowerBounding!(x::Optimizer,y::NodeBB)
 
     # Copies initial model into working model (if initial model isn't dummy)
     # A dummy model is left iff all terms are relaxed
-    if x.InitialRelaxedOptimizer != DummyOptimizer()
-        x.WorkingRelaxedOptimizer = deepcopy(x.InitialRelaxedOptimizer)
+    if x.UseLowerFactory
+        factory = x.LowerFactory()
+        x.WorkingRelaxedOptimizer = factory
+        MOI.add_variables(x.WorkingRelaxedOptimizer, x.VariableNumber)
+    else
+        if x.InitialRelaxedOptimizer != DummyOptimizer()
+            x.WorkingRelaxedOptimizer = deepcopy(x.InitialRelaxedOptimizer)
+        end
     end
 
     Update_VariableBounds_Lower1!(x,y,x.WorkingRelaxedOptimizer)
-
     x.RelaxFunction(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = true)
     x.RelaxFunction(x, x.WorkingRelaxedOptimizer, y, x.Relaxation, load = false)
 
     # Optimizes the object
-    #tt = stdout
-    #redirect_stdout()
+    tt = stdout
+    redirect_stdout()
     MOI.optimize!(x.WorkingRelaxedOptimizer)
-    #redirect_stdout(tt)
+    redirect_stdout(tt)
 
     # Process output info and save to CurrentUpperInfo object
     termination_status = MOI.get(x.WorkingRelaxedOptimizer, MOI.TerminationStatus())

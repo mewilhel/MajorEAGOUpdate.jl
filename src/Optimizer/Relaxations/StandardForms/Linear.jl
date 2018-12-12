@@ -39,12 +39,9 @@ function RelaxLinear!(src::Optimizer,trg::T) where {T<:MOI.AbstractOptimizer}
 end
 
 function ObjCutLinear!(src::Optimizer,trg) where {T<:MOI.AbstractOptimizer}
-    println("ran obj cut linear")
     if isa(src.Objective, MOI.SingleVariable)
         obj_set = MOI.LessThan(src.GlobalUpperBound)
         if (src.OptimizationSense == MOI.MinSense)
-            println("obj_set: $obj_set")
-            println("src.Objective: $(src.Objective)")
             MOI.add_constraint(trg, src.Objective, obj_set)
         elseif (src.OptimizationSense == MOI.MaxSense)
             neg_obj_var = MOI.ScalarAffineFunction{Float64}([MOI.ScalarAffineTerm{Float64}(-1.0, src.Objective.variable)], 0.0)

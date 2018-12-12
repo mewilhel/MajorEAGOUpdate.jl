@@ -60,11 +60,11 @@ function SolveNLP!(x::Optimizer)
     x.CurrentPostprocessInfo.Feasibility = true
 
     # Performs prepocessing and times
-    redirect_stdout()
+    #redirect_stdout()
     PreprocessTime = @elapsed x.Preprocess(x,CurrentNode)
     PreprocessTime = x.Preprocess(x,CurrentNode)
     x.History.PreprocessTime[x.CurrentIterationCount] = x.History.PreprocessTime[x.CurrentIterationCount-1]+PreprocessTime
-    redirect_stdout(TT)
+    #redirect_stdout(TT)
 
     x.CurrentUpperInfo.Feasibility = true
     if (x.CurrentPreprocessInfo.Feasibility)
@@ -79,14 +79,14 @@ function SolveNLP!(x::Optimizer)
 
       while x.CutCondition(x)
         x.AddCut!(x); x.CutIterations += 1
-        redirect_stdout()
+        #redirect_stdout()
         #LowerProblemTime = @elapsed x.LowerProblem(x,CurrentNode)
         x.LowerProblem(x,CurrentNode)
         LowerProblemTime = 0.0
         x.History.LowerBound[x.CurrentIterationCount] = x.History.LowerBound[x.CurrentIterationCount]+LowerProblemTime
         x.History.LowerTime[x.CurrentIterationCount] = x.History.LowerTime[x.CurrentIterationCount-1]+LowerProblemTime
         x.History.LowerCount += 1
-        redirect_stdout(TT)
+        #redirect_stdout(TT)
         PrintResults!(x,true)
       end
       x.History.CutCount[x.CurrentIterationCount] = x.CutIterations
@@ -116,11 +116,11 @@ function SolveNLP!(x::Optimizer)
           end
 
           # Performs and times post processing
-          redirect_stdout()
+          #redirect_stdout()
           PostprocessTime = @elapsed x.Postprocess(x,CurrentNode)
           x.History.PostprocessTime[x.CurrentIterationCount] = x.History.PostprocessTime[x.CurrentIterationCount-1]+PostprocessTime
           PostSaveFlag = true
-          redirect_stdout(TT)
+          #redirect_stdout(TT)
 
           # Checks to see if the node
           if (x.CurrentPostprocessInfo.Feasibility)

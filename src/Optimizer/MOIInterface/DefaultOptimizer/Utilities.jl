@@ -198,6 +198,14 @@ function SetToDefault!(m::Optimizer)
     (typeof(m.InitialRelaxedOptimizer) == DummyOptimizer) && (m.InitialRelaxedOptimizer = CPLEX.Optimizer())
     (typeof(m.WorkingRelaxedOptimizer) == DummyOptimizer) && (m.WorkingRelaxedOptimizer = CPLEX.Optimizer())
     (typeof(m.InitialUpperOptimizer) == DummyOptimizer) && (m.InitialUpperOptimizer = Ipopt.Optimizer())
+    if (typeof(m.LowerFactory.constructor) == DummyOptimizer)
+        m.LowerFactory = JuMP.with_optimizer(CPLEX.Optimizer)
+        m.UseLowerFactory = true
+    end
+    if (typeof(m.UpperFactory.constructor) == DummyOptimizer)
+        m.UpperFactory = JuMP.with_optimizer(Ipopt.Optimizer)
+        m.UseUpperFactory = true
+    end
     (typeof(m.WorkingUpperOptimizer) == DummyOptimizer) && (m.WorkingUpperOptimizer = Ipopt.Optimizer())
     (typeof(m.LPOptimizer) == DummyOptimizer) && (m.LPOptimizer = Clp.Optimizer())
     (typeof(m.NLPOptimizer) == DummyOptimizer) && (m.NLPOptimizer = Ipopt.Optimizer())
