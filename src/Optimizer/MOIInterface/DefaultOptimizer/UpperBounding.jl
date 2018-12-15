@@ -1,5 +1,5 @@
 function EAGODefault_UpperBounding!(x::Optimizer,y::NodeBB)
-    if is_integer_feasible(x)
+    if is_integer_feasible(x) && mod(x.CurrentIterationCount,x.UpperBoundingInterval) == 1 
         if x.UseUpperFactory
             factory = x.UpperFactory()
             x.InitialUpperOptimizer = factory

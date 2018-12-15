@@ -24,13 +24,14 @@ end
 function BuildScriptEval(f,g,h)
 end
 
-function SolveScript(f, h, xl, xu, pl, pu, opt, hj, g)
+#=
+SolveScript(f, h, xl, xu, opt, g)
+=#
+function SolveScript(f, h, xl, xu, opt, g)
 
     # get dimensions
-    @assert length(pl) == length(pu)
     @assert length(xl) == length(xu)
-    np = length(pl); nx = length(xl);
-    ng = (g == nothing) ? 0 : length(g(xl,pl))
+    nx = length(xl); ng = (g == nothing) ? 0 : length(g(xl,pl))
 
     # sets most routines to default (expect bisection)
     SetToDefault!(opt)
@@ -41,11 +42,6 @@ function SolveScript(f, h, xl, xu, pl, pu, opt, hj, g)
     for j in 1:nx
         MOI.add_constraint(opt, var_EAGO[j], MOI.GreaterThan(xl[j]))
         MOI.add_constraint(opt, var_EAGO[j], MOI.LessThan(xu[j]))
-    end
-
-    for i in 1:np
-        MOI.add_constraint(opt, var_EAGO[i+nx], MOI.GreaterThan(pl[i]))
-        MOI.add_constraint(opt, var_EAGO[i+nx], MOI.LessThan(pu[i]))
     end
 
     # Build the lower implicit evaluator

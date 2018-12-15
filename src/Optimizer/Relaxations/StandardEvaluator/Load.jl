@@ -86,16 +86,11 @@ function Build_NLP_Evaluator(S::R,src::T,x::Optimizer) where {R<:Type, T<:MOI.Ab
         end
         d.subexpression_values_set = fill(NaN,length(d.subexpressions))
         d.subexpression_values_flt = fill(NaN,length(d.subexpressions))
-        println("finish load inner pre 1")
+
         # USER OUTPUT BUFFERS??????
         d.fw_repeats = x.EvalWalkRepts
         d.has_reverse = x.EvalReverse
-        println("finish load inner pre 1a")
-        println("num_variables_: $(num_variables_)")
-        println("d.m.nlp_data.largest_user_input_dimension: $(d.m.nlp_data.largest_user_input_dimension)")
         d.jac_storage = Array{Float64}(undef,max(num_variables_, d.m.nlp_data.largest_user_input_dimension)) # DO I NEED THIS
-        println("d.jac_storage: $(d.jac_storage)")
-        println("finish load inner")
         return d
     end
 end

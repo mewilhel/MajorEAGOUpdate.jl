@@ -188,6 +188,9 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     MaximumRepetitions::Int
     RepetitionVolumeTolerance::Float64
 
+    # Upper bounding nodes skipped
+    UpperBoundingInterval::Int
+
     # Cutting Plane Options
     CutIterations::Int
 
@@ -260,6 +263,9 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
         # Poor Man's LP reptiations
         default_opt_dict[:PoorManLPRepts] = 1
+
+        # Upper Bounding Interval
+        default_opt_dict[:UpperBoundingInterval] = 4
 
         # Termination Limits
         default_opt_dict[:IterationLimit] = 1000 #Int(1E6)

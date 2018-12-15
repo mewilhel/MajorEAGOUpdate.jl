@@ -1,0 +1,6 @@
+authors = ["Matthew Wilhelm <matthew.wilhelm@uconn.edu>"]
+name = "TapeScript"
+uuid = "ca8cf840-ff21-11e8-2d2b-471abff4e5c8"
+version = "0.1.0"
+
+[deps]
